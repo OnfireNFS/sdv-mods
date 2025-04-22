@@ -1,0 +1,10 @@
+{
+  "Name": "Companion Adventures",
+  "Author": "Onfyre",
+  "Version": "1.0.0",
+  "Description": "Ask villagers to be your companion and go on adventures with you!",
+  "UniqueID": "onfyre.companion_adventures",
+  "EntryDll": "CompanionAdventures.dll",
+  "MinimumApiVersion": "4.0.0",
+  "UpdateKeys": []
+}

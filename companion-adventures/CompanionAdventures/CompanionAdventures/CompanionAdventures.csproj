@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="4.4.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\CompanionAdventuresNative\target\release\deps\libcompanionadventures.so">
+        <Link>runtimes/linux-x64/native/libcompanionadventures.so</Link>
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <Pack>true</Pack>
+        <PackagePath>runtimes/linux-x64/native/</PackagePath>
+      </Content>
+    </ItemGroup>
+
+</Project>
