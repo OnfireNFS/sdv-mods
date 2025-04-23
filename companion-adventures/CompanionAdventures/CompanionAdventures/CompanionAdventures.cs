@@ -1,14 +1,10 @@
-using System;
 using System.Runtime.InteropServices;
-using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
-using StardewModdingAPI.Utilities;
 using StardewValley;
 
 namespace CompanionAdventures
 {
-    
     internal sealed class CompanionAdventures : Mod
     {
         /*********
@@ -18,28 +14,8 @@ namespace CompanionAdventures
         /// <param name="helper">Provides simplified APIs for writing mods.</param>
         public override void Entry(IModHelper helper)
         {
-            var ptr = IntPtr.Zero;
-            try
-            {
-                ptr = Native.version();
-                var result = Marshal.PtrToStringUTF8(ptr);
-                Monitor.Log($"Native code loaded: {result}", LogLevel.Debug);
-            }
-            catch (DllNotFoundException e)
-            {
-                Monitor.Log($"Error loading native library '{Native.LIBRARY}': {e.Message}", LogLevel.Error);
-                Monitor.Log("Ensure the correct native library for the current platform and architecture is deployed.");
-            }
-            catch (EntryPointNotFoundException e)
-            {
-                Monitor.Log($"Error finding entry point in native library '{Native.LIBRARY}': {e.Message}",
-                    LogLevel.Error);
-            }
-            finally
-            {
-                Native.free_str(ptr);
-            }
             
+            Monitor.Log($"Native code loaded: {Native.Version()}", LogLevel.Debug);
             Monitor.Log(Constants.TargetPlatform.ToString(), LogLevel.Debug);
             
             helper.Events.Input.ButtonPressed += this.OnButtonPressed;
@@ -76,19 +52,7 @@ namespace CompanionAdventures
                 return;
 
             // print button presses to the console window
-            var ptr = IntPtr.Zero;
-            var result = "";
-            try
-            {
-                ptr = Native.version();
-                result = Marshal.PtrToStringUTF8(ptr);
-            }
-            finally
-            {
-                Native.free_str(ptr);
-            }
-            
-            this.Monitor.Log($"{Game1.player.Name} pressed {e.Button}. {result}", LogLevel.Debug);
+            this.Monitor.Log($"{Game1.player.Name} pressed {e.Button}. {Native.Version()}", LogLevel.Debug);
         }
     }
 }

@@ -6,7 +6,7 @@ pub fn version() -> *const c_char {
 }
 
 #[unsafe(no_mangle)]
-pub fn free_str(ptr: *mut c_char) {
+pub fn free_string(ptr: *mut c_char) {
     if ptr.is_null() {
         return;
     }
