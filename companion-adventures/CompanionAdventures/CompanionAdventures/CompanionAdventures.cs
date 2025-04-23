@@ -8,7 +8,7 @@ using StardewValley;
 
 namespace CompanionAdventures
 {
-    /// <summary>The mod entry point.</summary>
+    
     internal sealed class CompanionAdventures : Mod
     {
         internal const String LibraryName = "libcompanionadventures";
@@ -22,8 +22,8 @@ namespace CompanionAdventures
         {
             try
             {
-                var result = Native.add(1, 2);
-                Monitor.Log($"Message from Rust: Add 1 + 2: {result}.", LogLevel.Debug);
+                var result = Native.loaded();
+                Monitor.Log($"Native code loaded: {result}", LogLevel.Debug);
             }
             catch (DllNotFoundException e)
             {

@@ -1,4 +1,9 @@
 #[unsafe(no_mangle)]
+pub fn loaded() -> bool {
+    true
+}
+
+#[unsafe(no_mangle)]
 pub fn add(left: i32, right: i32) -> i32 {
     left + right
 }
