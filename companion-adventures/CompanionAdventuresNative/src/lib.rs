@@ -1,6 +1,18 @@
+use std::ffi::{c_char, CString};
+
 #[unsafe(no_mangle)]
-pub fn loaded() -> bool {
-    true
+pub fn version() -> *const c_char {
+    CString::new("CompanionAdventures 1.0.0").unwrap().into_raw()
+}
+
+#[unsafe(no_mangle)]
+pub fn free_str(ptr: *mut c_char) {
+    if ptr.is_null() {
+        return;
+    }
+    unsafe {
+        let _ = CString::from_raw(ptr);
+    }
 }
 
 #[unsafe(no_mangle)]

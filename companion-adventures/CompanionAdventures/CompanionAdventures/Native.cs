@@ -6,7 +6,7 @@ namespace CompanionAdventures;
 
 public static class Native
 {
-    private const String LIBRARY = "libcompanionadventures";
+    public const String LIBRARY = "libcompanionadventures";
 
     private static string DetermineRid(string platform)
     {
@@ -117,7 +117,10 @@ public static class Native
     }
 
     [DllImport(LIBRARY)]
-    public static extern Boolean loaded();
+    public static extern IntPtr version();
+    
+    [DllImport(LIBRARY)]
+    public static extern void free_str(IntPtr str);
     
     [DllImport(LIBRARY)]
     public static extern Int32 add(Int32 a, Int32 b);
