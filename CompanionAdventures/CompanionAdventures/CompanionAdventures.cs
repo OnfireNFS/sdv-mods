@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -14,13 +14,9 @@ namespace CompanionAdventures
         /// <param name="helper">Provides simplified APIs for writing mods.</param>
         public override void Entry(IModHelper helper)
         {
-            
-            Monitor.Log($"Native code loaded: {Native.Version()}", LogLevel.Debug);
-            Monitor.Log(Constants.TargetPlatform.ToString(), LogLevel.Debug);
-            
-            helper.Events.Input.ButtonPressed += this.OnButtonPressed;
+            helper.Events.Input.ButtonPressed += OnButtonPressed;
 
-            this.RegisterEvents(helper.Events);
+            RegisterEvents(helper.Events);
         }
 
         /// <summary>
@@ -38,7 +34,6 @@ namespace CompanionAdventures
             events.Display.RenderedHud += new EventHandler<RenderedHudEventArgs>((object sender, RenderedHudEventArgs e) => {});
         }
 
-
         /*********
          ** Private methods
          *********/
@@ -47,13 +42,47 @@ namespace CompanionAdventures
         /// <param name="e">The event data.</param>
         private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
         {
-            // ignore if player hasn't loaded a save yet
-            if (!Context.IsWorldReady)
+            // Ignore if player isn't in the world or if they are in a cutscene
+            if (!Context.IsPlayerFree)
                 return;
+
+            if (e.Button.IsActionButton())
+            {
+                // Create a rectangle where the cursor is to scan for NPCs
+                Rectangle tileRect = new Rectangle((int)e.Cursor.GrabTile.X * 64, (int)e.Cursor.GrabTile.Y * 64, 64, 64);
+                
+                NPC npc = null;
+                // Get the first non-monster npc inside the rectangle
+                foreach (var character in Game1.currentLocation.characters)
+                {
+                    if (!character.IsMonster && character.GetBoundingBox().Intersects(tileRect))
+                    {
+                        npc = character;
+                        break;
+                    }
+                }
+                // Alternative ways to grab the npc
+                if (npc == null)
+                    npc = Game1.currentLocation.isCharacterAtTile(e.Cursor.Tile + new Vector2(0f, 1f));
+                if (npc == null)
+                    npc = Game1.currentLocation.isCharacterAtTile(e.Cursor.GrabTile + new Vector2(0f, 1f));
+
+                if (npc == null)
+                    return;
+                
+                // If NPC is currently not a companion and has a Dialogue message queued: do nothing
+                // and let the dialogue message trigger
+                if (npc.CurrentDialogue.Count > 0)
+                    return;
+                
+                Monitor.Log($"{npc.CurrentDialogue.Count}", LogLevel.Debug);
+                
+                // Helper.Input.Suppress(e.Button);
+            }
 
             // print button presses to the console window
             // this.Monitor.Log($"{Game1.player.Name} pressed {e.Button}. {Native.Version()}", LogLevel.Debug);
-            this.Monitor.Log($"{Native.SayHello(Game1.player.Name)}, you pressed {e.Button}.", LogLevel.Debug);
+            // this.Monitor.Log($"{Native.SayHello(Game1.player.Name)}, you pressed {e.Button}.", LogLevel.Debug);
         }
     }
 }
