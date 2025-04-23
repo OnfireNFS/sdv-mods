@@ -1,4 +1,13 @@
-use std::ffi::{c_char, CString};
+use std::ffi::{c_char, CStr, CString};
+
+#[unsafe(no_mangle)]
+pub fn say_hello(name: *const c_char) -> *const c_char {
+    let text;
+    unsafe {
+        text = CStr::from_ptr(name).to_str().unwrap();
+    }
+    CString::new(format!("Hello {text}!")).unwrap().into_raw()
+}
 
 #[unsafe(no_mangle)]
 pub fn version() -> *const c_char {

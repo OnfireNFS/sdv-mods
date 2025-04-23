@@ -119,5 +119,8 @@ public static class NativeMethods
     public static extern IntPtr version();
     
     [DllImport(LIBRARY)]
+    public static extern IntPtr say_hello([MarshalAs(UnmanagedType.LPUTF8Str)] string str);
+    
+    [DllImport(LIBRARY)]
     public static extern void free_string(IntPtr str);
 }

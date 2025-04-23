@@ -9,10 +9,10 @@ public sealed class NativeString: IDisposable
     private string? _value = null;
     private bool _disposed = false;
 
-    public NativeString(Func<IntPtr> alloc, Action<IntPtr> freer)
+    public NativeString(IntPtr pointer, Action<IntPtr> freer)
     {
         this._freer = freer ?? throw new ArgumentNullException(nameof(freer)); // Freer is mandatory
-        this._pointer = alloc(); // Check freer is not null before calling pointer()
+        this._pointer = pointer;
     }
     
     /// <summary>
@@ -62,9 +62,9 @@ public sealed class NativeString: IDisposable
         FreeUnmanagedResources();
     }
 
-    public static string Wrap(Func<IntPtr> alloc, Action<IntPtr> free)
+    public static string Wrap(IntPtr pointer, Action<IntPtr> free)
     {
-        using var nativeString = new NativeString(alloc, free);
+        using var nativeString = new NativeString(pointer, free);
         return nativeString.Value;
     }
 }
