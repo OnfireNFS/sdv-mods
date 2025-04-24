@@ -1,12 +1,19 @@
+using CompanionAdventures.Companions;
+using CompanionAdventures.Events;
+using CompanionAdventures.Multiplayer;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 
+#nullable disable
 namespace CompanionAdventures
 {
-    internal sealed class CompanionAdventures : Mod
+    public class CompanionAdventures : Mod
     {
+        public EventManager EventManager;
+        public CompanionManager CompanionManager;
+        
         /*********
         ** Public methods
         *********/
@@ -15,39 +22,30 @@ namespace CompanionAdventures
         public override void Entry(IModHelper helper)
         {
             helper.Events.Input.ButtonPressed += OnButtonPressed;
-
-            RegisterEvents(helper.Events);
+            
+            EventManager = EventManager.New(this, helper);
+            CompanionManager = CompanionManager.New(this, helper);
+            
+            EventManager.RegisterEvents(helper.Events);
         }
-
-        /// <summary>
-        /// Register the events this mod listens to and what functions should be called to handle those events
-        /// </summary>
-        private void RegisterEvents(IModEvents events)
-        {
-            events.GameLoop.SaveLoaded += new EventHandler<SaveLoadedEventArgs>((object sender, SaveLoadedEventArgs e) => {});
-            events.GameLoop.Saving += new EventHandler<SavingEventArgs>((object sender, SavingEventArgs e) => {});
-            events.GameLoop.ReturnedToTitle += new EventHandler<ReturnedToTitleEventArgs>((object sender, ReturnedToTitleEventArgs e) => {});
-            events.GameLoop.DayStarted += new EventHandler<DayStartedEventArgs>((object sender, DayStartedEventArgs e) => {});
-            events.GameLoop.DayEnding += new EventHandler<DayEndingEventArgs>((object sender, DayEndingEventArgs e) => {});
-            events.GameLoop.GameLaunched += new EventHandler<GameLaunchedEventArgs>((object sender, GameLaunchedEventArgs e) => {});
-            events.GameLoop.UpdateTicked += new EventHandler<UpdateTickedEventArgs>((object sender, UpdateTickedEventArgs e) => {});
-            events.Display.RenderedHud += new EventHandler<RenderedHudEventArgs>((object sender, RenderedHudEventArgs e) => {});
-        }
-
+        
         /*********
          ** Private methods
          *********/
         /// <summary>Raised after the player presses a button on the keyboard, controller, or mouse.</summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event data.</param>
-        private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
+        private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {
             // Ignore if player isn't in the world or if they are in a cutscene
             if (!Context.IsPlayerFree)
                 return;
 
+            // Check if the button pressed is the interact button
             if (e.Button.IsActionButton())
             {
+                // https://github.com/spacechase0/StardewValleyMods/blob/develop/AdvancedSocialMenu/Mod.cs#L72-88
+                
                 // Create a rectangle where the cursor is to scan for NPCs
                 Rectangle tileRect = new Rectangle((int)e.Cursor.GrabTile.X * 64, (int)e.Cursor.GrabTile.Y * 64, 64, 64);
                 
@@ -67,19 +65,50 @@ namespace CompanionAdventures
                 if (npc == null)
                     npc = Game1.currentLocation.isCharacterAtTile(e.Cursor.GrabTile + new Vector2(0f, 1f));
 
+                // Early Exit: If there is no NPC there is nothing to do
                 if (npc == null)
                     return;
+                                
+                // Update the currentDialogue in case it is outdated
+                var farmer = Game1.player;
+                var heartLevel = Util.GetHeartLevel(farmer, npc);
+                npc.checkForNewCurrentDialogue(heartLevel);
                 
                 // If NPC is currently not a companion and has a Dialogue message queued: do nothing
                 // and let the dialogue message trigger
+                // TODO: Add check to see if npc is companion
                 if (npc.CurrentDialogue.Count > 0)
+                {
                     return;
-                
-                Monitor.Log($"{npc.CurrentDialogue.Count}", LogLevel.Debug);
-                
-                // Helper.Input.Suppress(e.Button);
-            }
+                }
 
+                // Create dialog options
+                string dialogText = $"Ask {npc.Name} to follow?";
+                Response[] responses =
+                [
+                    new Response("yes_key", "Yes"),
+                    new Response("no_key", "No"),
+                ];
+                
+                void AfterQuestionBehaviour(Farmer farmer, string responseText)
+                {
+                    if (responseText == "yes_key")
+                    {
+                        // Prevent default behaviour
+                        Helper.Input.Suppress(e.Button);
+                        CompanionManager.AddCompanion(farmer, npc);
+                        
+                        Monitor.Log($"Is {npc.Name} a companion? {CompanionManager.IsCompanion(npc)}");
+                    }
+                    else
+                    {
+                        
+                    }
+                }
+
+                Game1.currentLocation.createQuestionDialogue(dialogText, responses, AfterQuestionBehaviour, npc);
+            }
+            
             // print button presses to the console window
             // this.Monitor.Log($"{Game1.player.Name} pressed {e.Button}. {Native.Version()}", LogLevel.Debug);
             // this.Monitor.Log($"{Native.SayHello(Game1.player.Name)}, you pressed {e.Button}.", LogLevel.Debug);
