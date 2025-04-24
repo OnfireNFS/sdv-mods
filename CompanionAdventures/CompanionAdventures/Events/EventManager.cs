@@ -38,7 +38,7 @@ public class EventManager
         events.GameLoop.GameLaunched += new EventHandler<GameLaunchedEventArgs>(OnGameLaunched);
         events.GameLoop.UpdateTicked += new EventHandler<UpdateTickedEventArgs>((object sender, UpdateTickedEventArgs e) => {});
         events.Display.RenderedHud += new EventHandler<RenderedHudEventArgs>((object sender, RenderedHudEventArgs e) => {});
-        events.Multiplayer.ModMessageReceived += new EventHandler<ModMessageReceivedEventArgs>(MultiplayerManager.OnMessageRecieved);
+        events.Multiplayer.ModMessageReceived += new EventHandler<ModMessageReceivedEventArgs>(MultiplayerManager.OnMessageReceived);
     }
     
     private void OnGameLaunched(object sender, GameLaunchedEventArgs e) {

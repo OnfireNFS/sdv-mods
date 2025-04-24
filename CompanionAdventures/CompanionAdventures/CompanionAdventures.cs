@@ -1,6 +1,5 @@
 using CompanionAdventures.Companions;
 using CompanionAdventures.Events;
-using CompanionAdventures.Multiplayer;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -74,39 +73,69 @@ namespace CompanionAdventures
                 var heartLevel = Util.GetHeartLevel(farmer, npc);
                 npc.checkForNewCurrentDialogue(heartLevel);
                 
-                // If NPC is currently not a companion and has a Dialogue message queued: do nothing
-                // and let the dialogue message trigger
-                // TODO: Add check to see if npc is companion
-                if (npc.CurrentDialogue.Count > 0)
+                // If NPC is currently not a companion and has a Dialogue message queued --or--
+                // NPC cannot be a companion for this farmer:
+                // Do nothing and let the dialogue message trigger or default behaviour trigger
+                if (npc.CurrentDialogue.Count > 0 || !CompanionManager.IsNPCValidCompanionForFarmer(farmer, npc))
                 {
                     return;
                 }
 
-                // Create dialog options
-                string dialogText = $"Ask {npc.Name} to follow?";
-                Response[] responses =
-                [
-                    new Response("yes_key", "Yes"),
-                    new Response("no_key", "No"),
-                ];
-                
-                void AfterQuestionBehaviour(Farmer farmer, string responseText)
+                if (CompanionManager.IsCurrentlyCompanionForFarmer(farmer, npc))
                 {
-                    if (responseText == "yes_key")
+                    string dialogText = $"Ask {npc.Name} to leave?";
+                    Response[] responses =
+                    [
+                        new Response("yes_key", "Yes"),
+                        new Response("no_key", "No"),
+                    ];
+                    
+                    void AfterQuestionBehaviour(Farmer farmer, string responseText)
                     {
-                        // Prevent default behaviour
-                        Helper.Input.Suppress(e.Button);
-                        CompanionManager.AddCompanion(farmer, npc);
+                        if (responseText == "yes_key")
+                        {
+                            // Prevent default behaviour
+                            Helper.Input.Suppress(e.Button);
+                            CompanionManager.AddCompanion(farmer, npc);
                         
-                        Monitor.Log($"Is {npc.Name} a companion? {CompanionManager.IsCompanion(npc)}");
-                    }
-                    else
-                    {
+                            Monitor.Log($"Is {npc.Name} a companion? {CompanionManager.IsCompanion(npc)}");
+                        }
+                        else
+                        {
                         
+                        }
                     }
-                }
 
-                Game1.currentLocation.createQuestionDialogue(dialogText, responses, AfterQuestionBehaviour, npc);
+                    Game1.currentLocation.createQuestionDialogue(dialogText, responses, AfterQuestionBehaviour, npc);
+                }
+                else
+                {
+                    // Create dialog options
+                    string dialogText = $"Ask {npc.Name} to follow?";
+                    Response[] responses =
+                    [
+                        new Response("yes_key", "Yes"),
+                        new Response("no_key", "No"),
+                    ];
+                
+                    void AfterQuestionBehaviour(Farmer farmer, string responseText)
+                    {
+                        if (responseText == "yes_key")
+                        {
+                            // Prevent default behaviour
+                            Helper.Input.Suppress(e.Button);
+                            CompanionManager.AddCompanion(farmer, npc);
+                        
+                            Monitor.Log($"Is {npc.Name} a companion? {CompanionManager.IsCompanion(npc)}");
+                        }
+                        else
+                        {
+                        
+                        }
+                    }
+
+                    Game1.currentLocation.createQuestionDialogue(dialogText, responses, AfterQuestionBehaviour, npc);
+                }
             }
             
             // print button presses to the console window

@@ -14,6 +14,9 @@ public class CompanionManager
     
     public Dictionary<Farmer, List<NPC>> CurrentCompanions = new();
     public int MaxCompanions = 3;
+    public int CompanionHeartsThreshold = 5;
+
+    public List<string> ValidCompanions = new List<string> {"Abigail", "Penny"};
     
     
     private CompanionManager(CompanionAdventures mod, IModHelper helper)
@@ -78,6 +81,41 @@ public class CompanionManager
             return true;
         }
     }
+
+    public bool IsNPCValidCompanion(NPC npc)
+    {
+        Monitor.Log($"Checking if {npc.Name} can be a valid companion.", LogLevel.Trace);
+
+        if (ValidCompanions.Contains(npc.Name))
+        {
+            Monitor.Log($"{npc.Name} can be a companion.", LogLevel.Trace);
+            return true;
+        }
+        
+        Monitor.Log($"{npc.Name} can not be a companion.", LogLevel.Trace);
+        return false;
+    }
+
+    public bool IsNPCValidCompanionForFarmer(Farmer farmer, NPC npc)
+    {
+        Monitor.Log($"Checking if {npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
+        // Early Exit: If NPC can't be a companion return
+        if (!IsNPCValidCompanion(npc))
+            return false;
+        
+        // Get the heart level of the farmer and this npc
+        var hearts = Util.GetHeartLevel(farmer, npc);
+
+        // Return true if number of hearts is equal to or above heart threshold
+        if (hearts >= CompanionHeartsThreshold)
+        {
+            Monitor.Log($"{npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
+            return true;
+        }
+        
+        Monitor.Log($"{npc.Name} is not a valid companion for {farmer.Name}.", LogLevel.Trace);
+        return false;
+    }
     
     public List<NPC> GetCurrentCompanions(Farmer player)
     {
@@ -92,6 +130,19 @@ public class CompanionManager
                 return true;
         }
 
+        return false;
+    }
+
+    public bool IsCurrentlyCompanionForFarmer(Farmer farmer, NPC npc)
+    {
+        // Try to get companions for this farmer
+        if (CurrentCompanions.TryGetValue(farmer, out List<NPC> companions))
+        {
+            // Check if list of companions contains NPC
+            return companions.Contains(npc);
+        }
+
+        // Farmer does not have any companions so this npc isn't currently a companion
         return false;
     }
 }

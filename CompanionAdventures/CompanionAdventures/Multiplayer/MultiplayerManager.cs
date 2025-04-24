@@ -32,7 +32,7 @@ public class MultiplayerManager
         Multiplayer.SendMessage(data, "companionadventures.companion.add", new []{ ModManifest.UniqueID });
     }
 
-    public void OnMessageRecieved(object sender, ModMessageReceivedEventArgs e)
+    public void OnMessageReceived(object sender, ModMessageReceivedEventArgs e)
     {
         // Early Exit: The message received was from a different mod
         if (e.FromModID != ModManifest.UniqueID)
@@ -40,10 +40,11 @@ public class MultiplayerManager
             return;
         }
 
-        if (e.Type == "companionadventures.companion.add")
-        {
-            string data = e.ReadAs<string>();
-            Monitor.Log($"Received \"companionadventures.companion.add\" event with data: {data}", LogLevel.Trace);
-        }
+        string data = e.ReadAs<string>();
+        Monitor.Log($"Received \"{e.Type}\" event with data: {data}", LogLevel.Trace);
+        // if (e.Type == "companionadventures.companion.add")
+        // {
+        //     
+        // }
     }
 }
