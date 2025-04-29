@@ -1,5 +1,4 @@
-using CompanionAdventures.Companions;
-using CompanionAdventures.Events;
+using CompanionAdventures.Framework;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -8,30 +7,52 @@ using StardewValley;
 #nullable disable
 namespace CompanionAdventures
 {
-    public class CompanionAdventures : Mod
+    public class ModEntry : Mod
     {
-        public EventManager EventManager;
+        /****
+         ** State
+         ****/
         public CompanionManager CompanionManager;
+        public MultiplayerManager MultiplayerManager;
         
-        /*********
-        ** Public methods
-        *********/
-        /// <summary>The mod entry point, called after the mod is first loaded.</summary>
-        /// <param name="helper">Provides simplified APIs for writing mods.</param>
+
+        /// <summary>
+        /// The mod entry point, called after the mod is first loaded.
+        /// </summary>
         public override void Entry(IModHelper helper)
         {
-            helper.Events.Input.ButtonPressed += OnButtonPressed;
-            
-            EventManager = EventManager.New(this, helper);
             CompanionManager = CompanionManager.New(this, helper);
+            MultiplayerManager = MultiplayerManager.New(this, helper);
             
-            EventManager.RegisterEvents(helper.Events);
+            RegisterEvents(helper.Events);
         }
         
-        /*********
-         ** Private methods
-         *********/
-        /// <summary>Raised after the player presses a button on the keyboard, controller, or mouse.</summary>
+        /// <summary>
+        /// Register the events that the CompanionAdventures mod listens to and what functions should be called to
+        /// handle those events
+        /// </summary>
+        private void RegisterEvents(IModEvents events)
+        {
+            /*
+             These events will most likely be required by this mod, but currently are just stubs
+             
+            events.GameLoop.SaveLoaded += new EventHandler<SaveLoadedEventArgs>((object sender, SaveLoadedEventArgs e) => {});
+            events.GameLoop.Saving += new EventHandler<SavingEventArgs>((object sender, SavingEventArgs e) => {});
+            events.GameLoop.ReturnedToTitle += new EventHandler<ReturnedToTitleEventArgs>((object sender, ReturnedToTitleEventArgs e) => {});
+            events.GameLoop.DayStarted += new EventHandler<DayStartedEventArgs>((object sender, DayStartedEventArgs e) => {});
+            events.GameLoop.DayEnding += new EventHandler<DayEndingEventArgs>((object sender, DayEndingEventArgs e) => {});
+            events.GameLoop.UpdateTicked += new EventHandler<UpdateTickedEventArgs>((object sender, UpdateTickedEventArgs e) => {});
+            */
+            events.Input.ButtonPressed += OnButtonPressed;
+            events.Multiplayer.ModMessageReceived += MultiplayerManager.OnMessageReceived;
+        }
+        
+        /// <summary>
+        /// Handles "OnButtonPressed" events for the CompanionAdventures mod.
+        ///
+        /// More specifically will check if the button pressed was the action button, if the farmer is trying to
+        /// interact with a NPC and if the NPC has interactions relating to CompanionAdventures.
+        /// </summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event data.</param>
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)

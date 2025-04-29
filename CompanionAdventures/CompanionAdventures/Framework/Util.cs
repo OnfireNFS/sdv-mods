@@ -1,7 +1,10 @@
 using StardewValley;
 
-namespace CompanionAdventures;
+namespace CompanionAdventures.Framework;
 
+/// <summary>
+/// Static class that contains utility functions used by CompanionAdventures
+/// </summary>
 public static class Util
 {
     /// <summary>

@@ -1,9 +1,8 @@
-using CompanionAdventures.Multiplayer;
 using StardewModdingAPI;
 using StardewValley;
 
 #nullable disable
-namespace CompanionAdventures.Companions;
+namespace CompanionAdventures.Framework;
 
 public class CompanionManager
 {
@@ -19,13 +18,13 @@ public class CompanionManager
     public List<string> ValidCompanions = new List<string> {"Abigail", "Penny"};
     
     
-    private CompanionManager(CompanionAdventures mod, IModHelper helper)
+    private CompanionManager(ModEntry mod, IModHelper helper)
     {
         Monitor = mod.Monitor;
         MultiplayerManager = MultiplayerManager.New(mod, helper);
     }
     
-    public static CompanionManager New(CompanionAdventures mod, IModHelper helper)
+    public static CompanionManager New(ModEntry mod, IModHelper helper)
     {
         Instance ??= new CompanionManager(mod, helper);
 
