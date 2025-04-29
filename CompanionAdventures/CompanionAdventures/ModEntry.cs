@@ -4,7 +4,6 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 
-#nullable disable
 namespace CompanionAdventures
 {
     public class ModEntry : Mod
@@ -12,8 +11,9 @@ namespace CompanionAdventures
         /****
          ** State
          ****/
-        public CompanionManager CompanionManager;
-        public MultiplayerManager MultiplayerManager;
+        public ModConfig Config = null!;
+        public CompanionManager CompanionManager = null!;
+        public MultiplayerManager MultiplayerManager = null!;
         
 
         /// <summary>
@@ -21,6 +21,8 @@ namespace CompanionAdventures
         /// </summary>
         public override void Entry(IModHelper helper)
         {
+            this.Config = helper.ReadConfig<ModConfig>();
+            
             CompanionManager = CompanionManager.New(this, helper);
             MultiplayerManager = MultiplayerManager.New(this, helper);
             
@@ -43,8 +45,14 @@ namespace CompanionAdventures
             events.GameLoop.DayEnding += new EventHandler<DayEndingEventArgs>((object sender, DayEndingEventArgs e) => {});
             events.GameLoop.UpdateTicked += new EventHandler<UpdateTickedEventArgs>((object sender, UpdateTickedEventArgs e) => {});
             */
+            events.GameLoop.GameLaunched += OnGameLaunched;
             events.Input.ButtonPressed += OnButtonPressed;
             events.Multiplayer.ModMessageReceived += MultiplayerManager.OnMessageReceived;
+        }
+
+        private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
+        {
+            var api = this.Helper.ModRegistry.GetApi<IContentPack>("Pathoschild.ContentPatcher");
         }
         
         /// <summary>
@@ -55,7 +63,7 @@ namespace CompanionAdventures
         /// </summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event data.</param>
-        private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
+        private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
         {
             // Ignore if player isn't in the world or if they are in a cutscene
             if (!Context.IsPlayerFree)
@@ -69,7 +77,7 @@ namespace CompanionAdventures
                 // Create a rectangle where the cursor is to scan for NPCs
                 Rectangle tileRect = new Rectangle((int)e.Cursor.GrabTile.X * 64, (int)e.Cursor.GrabTile.Y * 64, 64, 64);
                 
-                NPC npc = null;
+                NPC? npc = null;
                 // Get the first non-monster npc inside the rectangle
                 foreach (var character in Game1.currentLocation.characters)
                 {

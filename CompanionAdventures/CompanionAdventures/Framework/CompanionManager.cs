@@ -8,11 +8,11 @@ public class CompanionManager
 {
     private static CompanionManager Instance;
     
+    private readonly ModConfig Config;
     private readonly IMonitor Monitor;
     private readonly MultiplayerManager MultiplayerManager;
     
     public Dictionary<Farmer, List<NPC>> CurrentCompanions = new();
-    public int MaxCompanions = 3;
     public int CompanionHeartsThreshold = 5;
 
     public List<string> ValidCompanions = new List<string> {"Abigail", "Penny"};
@@ -20,6 +20,7 @@ public class CompanionManager
     
     private CompanionManager(ModEntry mod, IModHelper helper)
     {
+        Config = mod.Config;
         Monitor = mod.Monitor;
         MultiplayerManager = MultiplayerManager.New(mod, helper);
     }
@@ -54,7 +55,7 @@ public class CompanionManager
         if (CurrentCompanions.TryGetValue(farmer, out List<NPC> companions))
         {
             // If farmer has more than or equal to the maximum number of companions
-            if (companions.Count >= MaxCompanions)
+            if (companions.Count >= Config.MaxCompanions)
             {
                 Monitor.Log(
                     $"Could not add {npc.Name} as a companion to {farmer.Name}. {farmer.Name} already has the maximum number of companions!",
