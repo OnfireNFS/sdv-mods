@@ -16,7 +16,12 @@ public static class Stores
     public static CompanionAdventures useMod()
     {
         return CompanionAdventures.UseCompanionAdventures();
-    }    
+    }
+
+    public static Multiplayer useMultiplayer()
+    {
+        return Multiplayer.UseMultiplayer();
+    }
     
     /****
      * Shortcuts to common mod resources

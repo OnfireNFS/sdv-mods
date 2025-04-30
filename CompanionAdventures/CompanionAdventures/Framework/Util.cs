@@ -1,3 +1,5 @@
+using Microsoft.Xna.Framework;
+using StardewModdingAPI;
 using StardewValley;
 
 namespace CompanionAdventures.Framework;
@@ -7,6 +9,16 @@ namespace CompanionAdventures.Framework;
 /// </summary>
 public static class Util
 {
+    /// <summary>
+    /// Returns the Tile that the cursor is currently over
+    /// </summary>
+    /// <param name="cursor">Cursor to use for grabbing the Tile</param>
+    /// <returns>64x64 Tile that the cursor is currently in</returns>
+    public static Rectangle GetCursorTile(ICursorPosition cursor)
+    {
+        return  new Rectangle((int)cursor.GrabTile.X * 64, (int)cursor.GrabTile.Y * 64, 64, 64);
+    }
+    
     /// <summary>
     /// Returns the number of hearts between the specified farmer and npc 
     /// </summary>

@@ -25,12 +25,10 @@ public class Events
         */
         CompanionAdventures mod = Stores.useMod();
         IModEvents events = mod.Helper.Events;
-        
-        MultiplayerManager multiplayerManager = MultiplayerManager.New(mod, mod.Helper);
             
         events.GameLoop.GameLaunched += OnGameLaunched;
         events.Input.ButtonPressed += OnButtonPressed;
-        events.Multiplayer.ModMessageReceived += multiplayerManager.OnMessageReceived;
+        events.Multiplayer.ModMessageReceived += OnMessageReceived;
     }
     
     public static void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -58,14 +56,14 @@ public class Events
         {
             // https://github.com/spacechase0/StardewValleyMods/blob/develop/AdvancedSocialMenu/Mod.cs#L72-88
             
-            // Create a rectangle where the cursor is to scan for NPCs
-            Rectangle tileRect = new Rectangle((int)e.Cursor.GrabTile.X * 64, (int)e.Cursor.GrabTile.Y * 64, 64, 64);
+            // Get the tile that the cursor is currently in to scan for NPCs
+            Rectangle currentTile = Util.GetCursorTile(e.Cursor);
             
             NPC? npc = null;
             // Get the first non-monster npc inside the rectangle
             foreach (var character in Game1.currentLocation.characters)
             {
-                if (!character.IsMonster && character.GetBoundingBox().Intersects(tileRect))
+                if (!character.IsMonster && character.GetBoundingBox().Intersects(currentTile))
                 {
                     npc = character;
                     break;
@@ -160,5 +158,21 @@ public class Events
         // print button presses to the console window
         // this.Monitor.Log($"{Game1.player.Name} pressed {e.Button}. {Native.Version()}", LogLevel.Debug);
         // this.Monitor.Log($"{Native.SayHello(Game1.player.Name)}, you pressed {e.Button}.", LogLevel.Debug);
+    }
+    
+    public static void OnMessageReceived(object? sender, ModMessageReceivedEventArgs e)
+    {
+        CompanionAdventures mod = Stores.useMod();
+        IManifest modManifest = mod.ModManifest;
+        IMonitor monitor = mod.Monitor;
+        
+        // Early Exit: The message received was from a different mod
+        if (e.FromModID != modManifest.UniqueID)
+        {
+            return;
+        }
+        
+        Multiplayer multiplayer = Stores.useMultiplayer();
+        multiplayer.ReceiveMessage(e);
     }
 }

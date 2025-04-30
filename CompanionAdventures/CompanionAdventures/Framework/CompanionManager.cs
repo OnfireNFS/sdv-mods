@@ -1,14 +1,11 @@
 using StardewModdingAPI;
 using StardewValley;
 
-#nullable disable
 namespace CompanionAdventures.Framework;
 
 public class CompanionManager
 {
-    private static CompanionManager _instance;
-    
-    // private readonly MultiplayerManager MultiplayerManager;
+    private static CompanionManager? _instance = null;
     
     public Dictionary<Farmer, List<NPC>> CurrentCompanions = new();
     public int CompanionHeartsThreshold = 5;
@@ -16,10 +13,7 @@ public class CompanionManager
     public List<string> ValidCompanions = new List<string> {"Abigail", "Penny"};
     
     
-    private CompanionManager()
-    {
-        // MultiplayerManager = useMultiplayer();
-    }
+    private CompanionManager() { }
     
     /// <summary>
     /// Get a reference to this store
@@ -55,7 +49,7 @@ public class CompanionManager
         }
         
         // Get farmers list of companions if they have one
-        if (CurrentCompanions.TryGetValue(farmer, out List<NPC> companions))
+        if (CurrentCompanions.TryGetValue(farmer, out List<NPC>? companions))
         {
             // If farmer has more than or equal to the maximum number of companions
             if (companions.Count >= config.MaxCompanions)
@@ -70,7 +64,6 @@ public class CompanionManager
             // If farmer doesn't have the ore than or equal to the maximum number of companions, add this companion
             companions.Add(npc);
             monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
-            // MultiplayerManager.SendMessage($"Successfully added {npc.Name} as a companion to {farmer.Name}");
             return true;
         }
         // Farmer doesn't exist in dictionary, add them and create a new list
@@ -80,7 +73,6 @@ public class CompanionManager
         {
             CurrentCompanions.Add(farmer, new List<NPC> { npc });
             monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
-            // MultiplayerManager.SendMessage($"Successfully added {npc.Name} as a companion to {farmer.Name}");
             return true;
         }
     }
@@ -124,7 +116,7 @@ public class CompanionManager
         return false;
     }
     
-    public List<NPC> GetCurrentCompanions(Farmer player)
+    public List<NPC>? GetCurrentCompanions(Farmer player)
     {
         return CurrentCompanions.GetValueOrDefault(player);
     }
@@ -143,7 +135,7 @@ public class CompanionManager
     public bool IsCurrentlyCompanionForFarmer(Farmer farmer, NPC npc)
     {
         // Try to get companions for this farmer
-        if (CurrentCompanions.TryGetValue(farmer, out List<NPC> companions))
+        if (CurrentCompanions.TryGetValue(farmer, out List<NPC>? companions))
         {
             // Check if list of companions contains NPC
             return companions.Contains(npc);
