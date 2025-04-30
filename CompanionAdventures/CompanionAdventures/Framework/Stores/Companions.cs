@@ -221,6 +221,8 @@ public class Companions
             if (responseText == "yes_key")
             {
                 AddCompanion(farmer, npc);
+                npc.controller = null;
+                npc.temporaryController = null;
                 monitor.Log($"Is {npc.Name} a companion? {IsCompanion(npc)}");
             }
             else
@@ -289,8 +291,28 @@ public class Companions
         
     }
 
-    public void OnPlayerWarped(Farmer farmer)
+    public void OnPlayerWarped(Farmer farmer, GameLocation newLocation)
     {
+        IMonitor monitor = store.UseMonitor();
+        monitor.Log($"Farmer is currently at {farmer.currentLocation}");
+        monitor.Log($"Farmer is warping to {newLocation}");
+        
+        foreach (var entry in CurrentCompanions)
+        {
+            // If the selected row is not our current farmer skip it
+            if (entry.Key != farmer)
+            {
+                continue;
+            }
+
+            foreach (NPC npc in entry.Value)
+            {
+                monitor.Log($"Updating companion {npc.Name}'s location to {newLocation}");
+                Game1.warpCharacter(npc, newLocation, farmer.Tile);
+                npc.currentLocation = newLocation;
+            }
+        }
+        
         // Update current farmers NPCs so that they warp to the same map as farmer
     }
 

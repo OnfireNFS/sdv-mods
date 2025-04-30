@@ -54,21 +54,6 @@ public class Events
         events.Player.Warped += OnPlayerWarped;
     }
     
-    private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
-    {
-        IModHelper helper = store.UseHelper();
-        
-        var api = helper.ModRegistry.GetApi<IContentPack>("Pathoschild.ContentPatcher");
-    }
-    
-    private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
-    {
-        Companions companions = store.UseCompanions();
-        
-        companions.OnUpdateTicking();
-    }
-    
-    
     /// <summary>
     /// Handles "OnButtonPressed" events for the CompanionAdventures mod.
     ///
@@ -126,6 +111,13 @@ public class Events
         }
     }
     
+    private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
+    {
+        IModHelper helper = store.UseHelper();
+        
+        var api = helper.ModRegistry.GetApi<IContentPack>("Pathoschild.ContentPatcher");
+    }
+    
     private void OnMessageReceived(object? sender, ModMessageReceivedEventArgs e)
     {
         IManifest modManifest = store.UseManifest();
@@ -163,6 +155,13 @@ public class Events
     {
         Companions companions = store.UseCompanions();
         
-        companions.OnPlayerWarped(e.Player);
+        companions.OnPlayerWarped(e.Player, e.NewLocation);
+    }
+    
+    private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
+    {
+        Companions companions = store.UseCompanions();
+        
+        companions.DrawCompanions(Game1.player);
     }
 }
