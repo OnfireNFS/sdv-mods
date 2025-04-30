@@ -6,11 +6,9 @@ namespace CompanionAdventures.Framework;
 
 public class CompanionManager
 {
-    private static CompanionManager Instance;
+    private static CompanionManager _instance;
     
-    private readonly ModConfig Config;
-    private readonly IMonitor Monitor;
-    private readonly MultiplayerManager MultiplayerManager;
+    // private readonly MultiplayerManager MultiplayerManager;
     
     public Dictionary<Farmer, List<NPC>> CurrentCompanions = new();
     public int CompanionHeartsThreshold = 5;
@@ -18,18 +16,20 @@ public class CompanionManager
     public List<string> ValidCompanions = new List<string> {"Abigail", "Penny"};
     
     
-    private CompanionManager(ModEntry mod, IModHelper helper)
+    private CompanionManager()
     {
-        Config = mod.Config;
-        Monitor = mod.Monitor;
-        MultiplayerManager = MultiplayerManager.New(mod, helper);
+        // MultiplayerManager = useMultiplayer();
     }
     
-    public static CompanionManager New(ModEntry mod, IModHelper helper)
+    /// <summary>
+    /// Get a reference to this store
+    /// </summary>
+    /// <returns>An instance of the CompanionManager store</returns>
+    public static CompanionManager UseCompanionManager()
     {
-        Instance ??= new CompanionManager(mod, helper);
+        _instance ??= new CompanionManager();
 
-        return Instance;
+        return _instance;
     }
     
     // Makes npc start following player
@@ -42,12 +42,15 @@ public class CompanionManager
     /// </returns>
     public bool AddCompanion(Farmer farmer, NPC npc)
     {
-        Monitor.Log($"Attempting to add {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
+        var config = Stores.useConfig();
+        var monitor = Stores.useMonitor();
+        
+        monitor.Log($"Attempting to add {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
         
         // Check if NPC is already a companion
         if (IsCompanion(npc))
         {
-            Monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion!", LogLevel.Trace);
+            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion!", LogLevel.Trace);
             return false;
         }
         
@@ -55,9 +58,9 @@ public class CompanionManager
         if (CurrentCompanions.TryGetValue(farmer, out List<NPC> companions))
         {
             // If farmer has more than or equal to the maximum number of companions
-            if (companions.Count >= Config.MaxCompanions)
+            if (companions.Count >= config.MaxCompanions)
             {
-                Monitor.Log(
+                monitor.Log(
                     $"Could not add {npc.Name} as a companion to {farmer.Name}. {farmer.Name} already has the maximum number of companions!",
                     LogLevel.Trace
                 );
@@ -66,8 +69,8 @@ public class CompanionManager
 
             // If farmer doesn't have the ore than or equal to the maximum number of companions, add this companion
             companions.Add(npc);
-            Monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
-            MultiplayerManager.SendMessage($"Successfully added {npc.Name} as a companion to {farmer.Name}");
+            monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
+            // MultiplayerManager.SendMessage($"Successfully added {npc.Name} as a companion to {farmer.Name}");
             return true;
         }
         // Farmer doesn't exist in dictionary, add them and create a new list
@@ -76,31 +79,35 @@ public class CompanionManager
         else
         {
             CurrentCompanions.Add(farmer, new List<NPC> { npc });
-            Monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
-            MultiplayerManager.SendMessage($"Successfully added {npc.Name} as a companion to {farmer.Name}");
+            monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
+            // MultiplayerManager.SendMessage($"Successfully added {npc.Name} as a companion to {farmer.Name}");
             return true;
         }
     }
 
-    public bool IsNPCValidCompanion(NPC npc)
+    public bool IsNpcValidCompanion(NPC npc)
     {
-        Monitor.Log($"Checking if {npc.Name} can be a valid companion.", LogLevel.Trace);
+        var monitor = Stores.useMonitor();
+        
+        monitor.Log($"Checking if {npc.Name} can be a valid companion.", LogLevel.Trace);
 
         if (ValidCompanions.Contains(npc.Name))
         {
-            Monitor.Log($"{npc.Name} can be a companion.", LogLevel.Trace);
+            monitor.Log($"{npc.Name} can be a companion.", LogLevel.Trace);
             return true;
         }
         
-        Monitor.Log($"{npc.Name} can not be a companion.", LogLevel.Trace);
+        monitor.Log($"{npc.Name} can not be a companion.", LogLevel.Trace);
         return false;
     }
 
-    public bool IsNPCValidCompanionForFarmer(Farmer farmer, NPC npc)
+    public bool IsNpcValidCompanionForFarmer(Farmer farmer, NPC npc)
     {
-        Monitor.Log($"Checking if {npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
+        var monitor = Stores.useMonitor();
+        
+        monitor.Log($"Checking if {npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
         // Early Exit: If NPC can't be a companion return
-        if (!IsNPCValidCompanion(npc))
+        if (!IsNpcValidCompanion(npc))
             return false;
         
         // Get the heart level of the farmer and this npc
@@ -109,11 +116,11 @@ public class CompanionManager
         // Return true if number of hearts is equal to or above heart threshold
         if (hearts >= CompanionHeartsThreshold)
         {
-            Monitor.Log($"{npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
+            monitor.Log($"{npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
             return true;
         }
         
-        Monitor.Log($"{npc.Name} is not a valid companion for {farmer.Name}.", LogLevel.Trace);
+        monitor.Log($"{npc.Name} is not a valid companion for {farmer.Name}.", LogLevel.Trace);
         return false;
     }
     

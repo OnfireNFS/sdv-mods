@@ -12,14 +12,14 @@ public class MultiplayerManager
     private readonly IMonitor Monitor;
     private readonly IMultiplayerHelper Multiplayer;
 
-    private MultiplayerManager(ModEntry mod, IModHelper helper)
+    private MultiplayerManager(CompanionAdventures mod, IModHelper helper)
     {
         ModManifest = mod.ModManifest;
         Monitor = mod.Monitor;
         Multiplayer = helper.Multiplayer;
     }
     
-    public static MultiplayerManager New(ModEntry mod, IModHelper helper)
+    public static MultiplayerManager New(CompanionAdventures mod, IModHelper helper)
     {
         Instance ??= new MultiplayerManager(mod, helper);
 
