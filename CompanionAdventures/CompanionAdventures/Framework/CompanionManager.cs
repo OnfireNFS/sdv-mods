@@ -1,3 +1,4 @@
+using CompanionAdventures.Framework.Models;
 using StardewModdingAPI;
 using StardewValley;
 
@@ -5,7 +6,10 @@ namespace CompanionAdventures.Framework;
 
 public class CompanionManager
 {
-    private static CompanionManager? _instance = null;
+    private readonly ModConfig Config;
+    private readonly IManifest ModManifest;
+    private readonly IMonitor Monitor;
+    private readonly IMultiplayerHelper Multiplayer;
     
     public Dictionary<Farmer, List<NPC>> CurrentCompanions = new();
     
@@ -13,17 +17,15 @@ public class CompanionManager
     public List<string> ValidCompanions = new List<string> {"Abigail", "Penny"};
     
     
-    private CompanionManager() { }
-    
     /// <summary>
-    /// Get a reference to this store
+    /// 
     /// </summary>
-    /// <returns>An instance of the CompanionManager store</returns>
-    public static CompanionManager UseCompanionManager()
+    public CompanionManager(ModConfig config, IManifest modManifest, IMultiplayerHelper multiplayer, IMonitor monitor)
     {
-        _instance ??= new CompanionManager();
-
-        return _instance;
+        this.Config = config;
+        this.ModManifest = modManifest;
+        this.Multiplayer = multiplayer;
+        this.Monitor = monitor;
     }
     
     // Functions this needs to handle
@@ -64,15 +66,12 @@ public class CompanionManager
     /// </returns>
     public bool AddCompanion(Farmer farmer, NPC npc)
     {
-        var config = Stores.useConfig();
-        var monitor = Stores.useMonitor();
-        
-        monitor.Log($"Attempting to add {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
+        Monitor.Log($"Attempting to add {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
         
         // Check if NPC is already a companion
         if (IsCompanion(npc))
         {
-            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion!", LogLevel.Trace);
+            Monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion!", LogLevel.Trace);
             return false;
         }
         
@@ -80,9 +79,9 @@ public class CompanionManager
         if (CurrentCompanions.TryGetValue(farmer, out List<NPC>? companions))
         {
             // If farmer has more than or equal to the maximum number of companions
-            if (companions.Count >= config.MaxCompanions)
+            if (companions.Count >= Config.MaxCompanions)
             {
-                monitor.Log(
+                Monitor.Log(
                     $"Could not add {npc.Name} as a companion to {farmer.Name}. {farmer.Name} already has the maximum number of companions!",
                     LogLevel.Trace
                 );
@@ -91,7 +90,9 @@ public class CompanionManager
 
             // If farmer doesn't have the ore than or equal to the maximum number of companions, add this companion
             companions.Add(npc);
-            monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
+            Monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
+            CompanionData data = new CompanionData(farmer, npc);
+            Multiplayer.SendMessage(data, Constants.MessagetypeCompanionAdded, new []{ ModManifest.UniqueID });
             return true;
         }
         // Farmer doesn't exist in dictionary, add them and create a new list
@@ -100,32 +101,28 @@ public class CompanionManager
         else
         {
             CurrentCompanions.Add(farmer, new List<NPC> { npc });
-            monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
+            Monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
             return true;
         }
     }
 
     public bool IsNpcValidCompanion(NPC npc)
     {
-        var monitor = Stores.useMonitor();
-        
-        monitor.Log($"Checking if {npc.Name} can be a valid companion.", LogLevel.Trace);
+        Monitor.Log($"Checking if {npc.Name} can be a valid companion.", LogLevel.Trace);
 
         if (ValidCompanions.Contains(npc.Name))
         {
-            monitor.Log($"{npc.Name} can be a companion.", LogLevel.Trace);
+            Monitor.Log($"{npc.Name} can be a companion.", LogLevel.Trace);
             return true;
         }
         
-        monitor.Log($"{npc.Name} can not be a companion.", LogLevel.Trace);
+        Monitor.Log($"{npc.Name} can not be a companion.", LogLevel.Trace);
         return false;
     }
 
     public bool IsNpcValidCompanionForFarmer(Farmer farmer, NPC npc)
     {
-        var monitor = Stores.useMonitor();
-        
-        monitor.Log($"Checking if {npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
+        Monitor.Log($"Checking if {npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
         // Early Exit: If NPC can't be a companion return
         if (!IsNpcValidCompanion(npc))
             return false;
@@ -136,11 +133,11 @@ public class CompanionManager
         // Return true if number of hearts is equal to or above heart threshold
         if (hearts >= CompanionHeartsThreshold)
         {
-            monitor.Log($"{npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
+            Monitor.Log($"{npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
             return true;
         }
         
-        monitor.Log($"{npc.Name} is not a valid companion for {farmer.Name}.", LogLevel.Trace);
+        Monitor.Log($"{npc.Name} is not a valid companion for {farmer.Name}.", LogLevel.Trace);
         return false;
     }
     
@@ -171,5 +168,23 @@ public class CompanionManager
 
         // Farmer does not have any companions so this npc isn't currently a companion
         return false;
+    }
+    
+    /****
+     ** Events
+     ****/
+    public void OnCompanionAdded(CompanionData data)
+    {
+        
+    }
+
+    public void OnCompanionRemoved(CompanionData data)
+    {
+        
+    }
+
+    public void OnCompanionUpdated(CompanionData data)
+    {
+        
     }
 }
