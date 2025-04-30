@@ -10,13 +10,34 @@ namespace CompanionAdventures.Framework;
 public static class Util
 {
     /// <summary>
-    /// Returns the Tile that the cursor is currently over
+    /// Returns the first NPC that the cursor is currently over
     /// </summary>
-    /// <param name="cursor">Cursor to use for grabbing the Tile</param>
-    /// <returns>64x64 Tile that the cursor is currently in</returns>
-    public static Rectangle GetCursorTile(ICursorPosition cursor)
+    /// <param name="cursor">Cursor to use for grabbing the current Tile</param>
+    /// <returns>
+    /// First NPC found within the 64x64 tile that the cursor is currently over. If no NPC is found then returns null.
+    /// </returns>
+    /// https://github.com/spacechase0/StardewValleyMods/blob/develop/AdvancedSocialMenu/Mod.cs#L72-88
+    public static NPC? GetFirstNpcFromCursor(ICursorPosition cursor)
     {
-        return  new Rectangle((int)cursor.GrabTile.X * 64, (int)cursor.GrabTile.Y * 64, 64, 64);
+        Rectangle area = new Rectangle((int)cursor.GrabTile.X * 64, (int)cursor.GrabTile.Y * 64, 64, 64);
+        NPC? npc = null;
+        
+        // Get the first non-monster npc inside the rectangle
+        foreach (var character in Game1.currentLocation.characters)
+        {
+            if (!character.IsMonster && character.GetBoundingBox().Intersects(area))
+            {
+                npc = character;
+                break;
+            }
+        }
+        // Alternative ways to grab the npc
+        if (npc == null)
+            npc = Game1.currentLocation.isCharacterAtTile(cursor.Tile + new Vector2(0f, 1f));
+        if (npc == null)
+            npc = Game1.currentLocation.isCharacterAtTile(cursor.GrabTile + new Vector2(0f, 1f));
+
+        return npc;
     }
     
     /// <summary>

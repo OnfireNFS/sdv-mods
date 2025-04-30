@@ -1,5 +1,6 @@
 using CompanionAdventures.Framework.Models;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using StardewValley;
 
 namespace CompanionAdventures.Framework;
@@ -169,7 +170,62 @@ public class CompanionManager
         // Farmer does not have any companions so this npc isn't currently a companion
         return false;
     }
-    
+
+    public void CompanionAdd(Farmer farmer, NPC npc)
+    {
+        // Create dialog options
+        string dialogText = $"Ask {npc.Name} to follow?";
+        Response[] responses =
+        [
+            new Response("yes_key", "Yes"),
+            new Response("no_key", "No"),
+        ];
+                
+        void AfterQuestionBehaviour(Farmer farmer, string responseText)
+        {
+            if (responseText == "yes_key")
+            {
+                AddCompanion(farmer, npc);
+                Monitor.Log($"Is {npc.Name} a companion? {IsCompanion(npc)}");
+            }
+            else
+            {
+                        
+            }
+        }
+
+        Game1.currentLocation.createQuestionDialogue(dialogText, responses, AfterQuestionBehaviour, npc);
+    }
+
+    public void CompanionOptions(Farmer farmer, NPC npc)
+    {
+        string dialogText = $"Ask {npc.Name} to leave?";
+        Response[] responses =
+        [
+            new Response("yes_key", "Yes"),
+            new Response("no_key", "No"),
+        ];
+                    
+        void AfterQuestionBehaviour(Farmer farmer, string responseText)
+        {
+            if (responseText == "yes_key")
+            {
+                Monitor.Log($"Is {npc.Name} a companion? {IsCompanion(npc)}");
+            }
+            else
+            {
+                        
+            }
+        }
+
+        Game1.currentLocation.createQuestionDialogue(dialogText, responses, AfterQuestionBehaviour, npc);
+    }
+
+    public void CompanionUpdate()
+    {
+        
+    }
+
     /****
      ** Events
      ****/
@@ -183,8 +239,26 @@ public class CompanionManager
         
     }
 
+    /// <summary>
+    /// Uses the provided data to update the provided companion with the provided information
+    ///
+    /// Useful when the companion is managed by another source (eg: another player in a multiplayer game) and the
+    /// position or state information has been already calculated by another client and the display just needs to be
+    /// updated in this client.
+    /// </summary>
+    /// <param name="data"></param>
     public void OnCompanionUpdated(CompanionData data)
     {
         
+    }
+
+    public void OnPlayerWarped(Farmer farmer)
+    {
+        // Update current farmers NPCs so that they warp to the same map as farmer
+    }
+
+    public void OnUpdateTicking()
+    {
+        // Draw all NPCs
     }
 }

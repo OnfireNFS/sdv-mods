@@ -1,11 +1,8 @@
 using CompanionAdventures.Framework;
 using CompanionAdventures.Framework.Models;
-using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
-using StardewModdingAPI.Utilities;
 using StardewValley;
-using StardewValley.Companions;
 using Constants = CompanionAdventures.Framework.Constants;
 
 namespace CompanionAdventures
@@ -35,6 +32,9 @@ namespace CompanionAdventures
                 helper.Multiplayer, 
                 this.Monitor
             );
+
+            Store store = new Store(this);
+            Test test2 = store.UseTest();
             
             // Hook events
             IModEvents events = helper.Events;
@@ -42,6 +42,7 @@ namespace CompanionAdventures
             events.GameLoop.UpdateTicking += OnUpdateTicking;
             events.Input.ButtonPressed += OnButtonPressed;
             events.Multiplayer.ModMessageReceived += OnMessageReceived;
+            events.Player.Warped += OnPlayerWarped;
         }
         
         private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -51,7 +52,7 @@ namespace CompanionAdventures
 
         private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
         {
-            CompanionManager.DrawCompanions(Game1.player);
+            CompanionManager.OnUpdateTicking();
         }
         
         /// <summary>
@@ -71,26 +72,8 @@ namespace CompanionAdventures
             // Check if the button pressed is the interact button
             if (e.Button.IsActionButton())
             {
-                // https://github.com/spacechase0/StardewValleyMods/blob/develop/AdvancedSocialMenu/Mod.cs#L72-88
-                
-                // Get the tile that the cursor is currently in to scan for NPCs
-                Rectangle currentTile = Util.GetCursorTile(e.Cursor);
-                
-                NPC? npc = null;
-                // Get the first non-monster npc inside the rectangle
-                foreach (var character in Game1.currentLocation.characters)
-                {
-                    if (!character.IsMonster && character.GetBoundingBox().Intersects(currentTile))
-                    {
-                        npc = character;
-                        break;
-                    }
-                }
-                // Alternative ways to grab the npc
-                if (npc == null)
-                    npc = Game1.currentLocation.isCharacterAtTile(e.Cursor.Tile + new Vector2(0f, 1f));
-                if (npc == null)
-                    npc = Game1.currentLocation.isCharacterAtTile(e.Cursor.GrabTile + new Vector2(0f, 1f));
+                // Get the first NPC in the tile that the cursor is currently over
+                NPC? npc = Util.GetFirstNpcFromCursor(e.Cursor);
 
                 // Early Exit: If there is no NPC there is nothing to do
                 if (npc == null)
@@ -109,66 +92,21 @@ namespace CompanionAdventures
                     return;
                 }
 
+                // Suppress default behavior 
+                Helper.Input.Suppress(e.Button);
+                
+                // Is the NPC being talked to currently a companion?
                 if (CompanionManager.IsCurrentlyCompanionForFarmer(farmer, npc))
                 {
-                    string dialogText = $"Ask {npc.Name} to leave?";
-                    Response[] responses =
-                    [
-                        new Response("yes_key", "Yes"),
-                        new Response("no_key", "No"),
-                    ];
-                    
-                    void AfterQuestionBehaviour(Farmer farmer, string responseText)
-                    {
-                        if (responseText == "yes_key")
-                        {
-                            // Prevent default behaviour
-                            Helper.Input.Suppress(e.Button);
-                            CompanionManager.AddCompanion(farmer, npc);
-                        
-                            Monitor.Log($"Is {npc.Name} a companion? {CompanionManager.IsCompanion(npc)}");
-                        }
-                        else
-                        {
-                        
-                        }
-                    }
-
-                    Game1.currentLocation.createQuestionDialogue(dialogText, responses, AfterQuestionBehaviour, npc);
+                    // If yes, show options for this companion
+                    CompanionManager.CompanionOptions(farmer, npc);
                 }
                 else
                 {
-                    // Create dialog options
-                    string dialogText = $"Ask {npc.Name} to follow?";
-                    Response[] responses =
-                    [
-                        new Response("yes_key", "Yes"),
-                        new Response("no_key", "No"),
-                    ];
-                
-                    void AfterQuestionBehaviour(Farmer farmer, string responseText)
-                    {
-                        if (responseText == "yes_key")
-                        {
-                            // Prevent default behaviour
-                            Helper.Input.Suppress(e.Button);
-                            CompanionManager.AddCompanion(farmer, npc);
-                        
-                            Monitor.Log($"Is {npc.Name} a companion? {CompanionManager.IsCompanion(npc)}");
-                        }
-                        else
-                        {
-                        
-                        }
-                    }
-
-                    Game1.currentLocation.createQuestionDialogue(dialogText, responses, AfterQuestionBehaviour, npc);
+                    // If no, show the option to add this NPC as a companion
+                    CompanionManager.CompanionAdd(farmer, npc);
                 }
             }
-            
-            // print button presses to the console window
-            // this.Monitor.Log($"{Game1.player.Name} pressed {e.Button}. {Native.Version()}", LogLevel.Debug);
-            // this.Monitor.Log($"{Native.SayHello(Game1.player.Name)}, you pressed {e.Button}.", LogLevel.Debug);
         }
         
         private void OnMessageReceived(object? sender, ModMessageReceivedEventArgs e)
@@ -179,21 +117,29 @@ namespace CompanionAdventures
                 return;
             }
 
-            if (e.Type == Constants.MessagetypeCompanionAdded)
+            switch (e.Type)
             {
-                CompanionManager.OnCompanionAdded(e.ReadAs<CompanionData>());
-            } else if (e.Type == Constants.MessagetypeCompanionRemoved)
-            {
-                CompanionManager.OnCompanionRemoved(e.ReadAs<CompanionData>());
-            } else if (e.Type == Constants.MessagetypeCompanionUpdated)
-            {
-                CompanionManager.OnCompanionUpdated(e.ReadAs<CompanionData>());
+                case Constants.MessagetypeCompanionAdded:
+                    CompanionManager.OnCompanionAdded(e.ReadAs<CompanionData>());
+                    break;
+                case Constants.MessagetypeCompanionRemoved:
+                    CompanionManager.OnCompanionRemoved(e.ReadAs<CompanionData>());
+                    break;
+                case Constants.MessagetypeCompanionUpdated:
+                    CompanionManager.OnCompanionUpdated(e.ReadAs<CompanionData>());
+                    break;
+                default:
+                {
+                    string data = e.ReadAs<string>();
+                    Monitor.Log($"Received unknown event type: \"{e.Type}\" event with data: \"{data}\"", LogLevel.Error);
+                    break;
+                }
             }
-            else
-            {
-                string data = e.ReadAs<string>();
-                Monitor.Log($"Received unknown event type: \"{e.Type}\" event with data: \"{data}\"", LogLevel.Error);
-            }
+        }
+
+        private void OnPlayerWarped(object? sender, WarpedEventArgs e)
+        {
+            CompanionManager.OnPlayerWarped(e.Player);
         }
     }
 }
