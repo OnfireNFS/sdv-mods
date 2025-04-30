@@ -8,8 +8,8 @@ public class CompanionManager
     private static CompanionManager? _instance = null;
     
     public Dictionary<Farmer, List<NPC>> CurrentCompanions = new();
-    public int CompanionHeartsThreshold = 5;
-
+    
+    public int CompanionHeartsThreshold = 0;
     public List<string> ValidCompanions = new List<string> {"Abigail", "Penny"};
     
     
@@ -26,8 +26,36 @@ public class CompanionManager
         return _instance;
     }
     
-    // Makes npc start following player
+    // Functions this needs to handle
+    // Add companion local/net
+    //  Remove from default scheduling
+    // Remove companion local/net
+    //  Resume default scheduling
+    // Update companion location local/net
+    // Handle game tick
 
+    public void DrawCompanions(Farmer farmer)
+    {
+        foreach (var entry in CurrentCompanions)
+        {
+            // If the selected row is not our current farmer skip it
+            if (entry.Key != farmer)
+            {
+                continue;
+            }
+
+            foreach (NPC npc in entry.Value)
+            {
+                npc.position.X = (int)farmer.position.X;
+                npc.position.Y = (int)farmer.position.Y;
+            }
+        }
+        
+        // For NPC in CompanionManager.CurrentCompanions
+        // check if NPC farmer is current farmer
+        // update NPC location to follow current farmer
+    }
+    
     /// <summary>
     /// Attempts to add the npc to the farmers companion list
     /// </summary>

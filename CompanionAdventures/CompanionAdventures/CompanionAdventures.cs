@@ -1,11 +1,16 @@
+using System.Reactive.Linq;
 using CompanionAdventures.Framework;
 using StardewModdingAPI;
+using StardewValley.Network;
 
 namespace CompanionAdventures
 {
     public class CompanionAdventures : Mod
     {
-        private static CompanionAdventures _instance = null!;
+        /****
+         ** State
+         ****/
+        /// <summary>The mod settings.</summary>
         public ModConfig Config = null!;
         
         /// <summary>

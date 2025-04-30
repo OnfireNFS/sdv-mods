@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.Menus;
 
 namespace CompanionAdventures.Framework;
 
@@ -21,12 +22,12 @@ public class Events
         events.GameLoop.ReturnedToTitle += new EventHandler<ReturnedToTitleEventArgs>((object sender, ReturnedToTitleEventArgs e) => {});
         events.GameLoop.DayStarted += new EventHandler<DayStartedEventArgs>((object sender, DayStartedEventArgs e) => {});
         events.GameLoop.DayEnding += new EventHandler<DayEndingEventArgs>((object sender, DayEndingEventArgs e) => {});
-        events.GameLoop.UpdateTicked += new EventHandler<UpdateTickedEventArgs>((object sender, UpdateTickedEventArgs e) => {});
         */
         CompanionAdventures mod = Stores.useMod();
         IModEvents events = mod.Helper.Events;
             
         events.GameLoop.GameLaunched += OnGameLaunched;
+        events.GameLoop.UpdateTicking += OnUpdateTicking;
         events.Input.ButtonPressed += OnButtonPressed;
         events.Multiplayer.ModMessageReceived += OnMessageReceived;
     }
@@ -35,6 +36,12 @@ public class Events
     {
         CompanionAdventures mod = Stores.useMod();
         var api = mod.Helper.ModRegistry.GetApi<IContentPack>("Pathoschild.ContentPatcher");
+    }
+
+    public static void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
+    {
+        CompanionManager companionManager = Stores.useCompanionManager();
+        companionManager.DrawCompanions(Game1.player);
     }
     
     /// <summary>
