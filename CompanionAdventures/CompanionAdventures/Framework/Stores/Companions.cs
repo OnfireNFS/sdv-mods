@@ -28,6 +28,9 @@ public partial class Store
     }
 }
 
+/// <summary>
+/// Manages creating and removing companions for this player
+/// </summary>
 public class Companions
 {
     /****
@@ -46,7 +49,7 @@ public class Companions
     /****
      ** Companions
      ****/
-    public Dictionary<Farmer, List<NPC>> CurrentCompanions = new();
+    public Dictionary<Farmer, List<Companion>> CurrentCompanions = new();
     
     public int CompanionHeartsThreshold = 0;
     public List<string> ValidCompanions = new List<string> {"Abigail", "Penny"};
@@ -59,6 +62,100 @@ public class Companions
     // Update companion location local/net
     // Handle game tick
 
+    /// <summary>
+    /// Attempts to add the npc as a companion to the provided farmer
+    /// </summary>
+    public void Add(Farmer farmer, NPC npc)
+    {
+        IMonitor monitor = store.UseMonitor();
+        
+        // Early Exit: Check if NPC is already a companion
+        if (IsNpcCompanion(npc))
+        {
+            Companion existingCompanion = GetCompanion(npc)!;
+            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion for {existingCompanion.farmer.Name}!", LogLevel.Trace);
+            return;
+        }
+        
+        // Early Exit: Check if NPC can be a companion for this farmer
+        if (!IsNpcValidCompanionForFarmer(farmer, npc))
+        {
+            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is not a valid companion for {farmer.Name}!", LogLevel.Trace);
+            return;
+        }
+        
+        // Get farmers list of companions if they have one
+        ModConfig config = store.UseConfig();
+        List<Companion> currentCompanions = GetCurrentCompanions(farmer);
+
+        // Early Exit: If farmer has more than or equal to maximum number of companions
+        if (currentCompanions.Count >= config.MaxCompanions)
+        {
+            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {farmer.Name} already has the maximum number of companions!", LogLevel.Trace);
+            return;
+        }
+
+        // Create new companion from NPC and add it to current companions for this farmer
+        Companion companion = new Companion(store, npc, farmer);
+        currentCompanions.Add(companion);
+        monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
+    }
+
+    /// <summary>
+    /// Attempts to remove the npc as a companion to any farmer
+    /// </summary>
+    public void Remove(NPC npc)
+    {
+        IMonitor monitor = store.UseMonitor();
+        
+        // Early Exit: Cannot remove companion as NPC is not currently a companion
+        if (!IsNpcCompanion(npc))
+        {
+            monitor.Log($"Could not remove {npc.Name} as a companion. {npc.Name} is not currently a companion!", LogLevel.Trace);
+            return;
+        }
+
+        foreach (var entry in CurrentCompanions)
+        {
+            Companion? companion = entry.Value.Find(_companion => _companion.npc == npc);
+            
+            if (companion == null) 
+                continue;
+            
+            entry.Value.Remove(companion);
+            companion.Remove();
+            return;
+        }
+    }
+    
+    /// <summary>
+    /// Attempts to remove the npc as a companion to the provided farmer
+    /// </summary>
+    public void Remove(Farmer farmer, NPC npc)
+    {
+        IMonitor monitor = store.UseMonitor();
+        
+        // Early Exit: Cannot remove companion as NPC is not currently a companion for this farmer
+        if (!IsNpcCompanionForFarmer(farmer, npc))
+        {
+            monitor.Log($"Could not remove {npc.Name} as a companion to {farmer.Name}. {npc.Name} is not currently a companion for {farmer.Name}!", LogLevel.Trace);
+            return;
+        }
+        
+        if (!CurrentCompanions.TryGetValue(farmer, out List<Companion>? companions)) 
+            // Unreachable!
+            // This should never happen because we already checked that CurrentCompanions has a value
+            return;
+        
+        // Get companion from current companions list (this should always return a value because we checked above
+        // that the npc is a valid companion for this farmer)
+        Companion companion = companions.Find(companion => companion.npc == npc)!;
+            
+        companions.Remove(companion);
+        companion.Remove();
+    }
+    
+    
     public void DrawCompanions(Farmer farmer)
     {
         foreach (var entry in CurrentCompanions)
@@ -69,8 +166,10 @@ public class Companions
                 continue;
             }
 
-            foreach (NPC npc in entry.Value)
+            foreach (Companion companion in entry.Value)
             {
+                NPC npc = companion.npc;
+                
                 npc.position.X = (int)farmer.position.X;
                 npc.position.Y = (int)farmer.position.Y;
             }
@@ -81,60 +180,9 @@ public class Companions
         // update NPC location to follow current farmer
     }
     
-    /// <summary>
-    /// Attempts to add the npc to the farmers companion list
-    /// </summary>
-    /// <returns>
-    /// Returns true if the companion was added or false if it couldn't be added.
-    /// </returns>
-    public bool AddCompanion(Farmer farmer, NPC npc)
-    {
-        ModConfig config = store.UseConfig();
-        IMonitor monitor = store.UseMonitor();
-        
-        monitor.Log($"Attempting to add {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
-        
-        // Check if NPC is already a companion
-        if (IsCompanion(npc))
-        {
-            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion!", LogLevel.Trace);
-            return false;
-        }
-        
-        // Get farmers list of companions if they have one
-        if (CurrentCompanions.TryGetValue(farmer, out List<NPC>? companions))
-        {
-            // If farmer has more than or equal to the maximum number of companions
-            if (companions.Count >= config.MaxCompanions)
-            {
-                monitor.Log(
-                    $"Could not add {npc.Name} as a companion to {farmer.Name}. {farmer.Name} already has the maximum number of companions!",
-                    LogLevel.Trace
-                );
-                return false;
-            }
-
-            // If farmer doesn't have the ore than or equal to the maximum number of companions, add this companion
-            companions.Add(npc);
-            monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
-            CompanionData data = new CompanionData(farmer, npc);
-            
-            IModHelper helper = store.UseHelper();
-            IManifest modManifest = store.UseManifest();
-            
-            helper.Multiplayer.SendMessage(data, Constants.MessagetypeCompanionAdded, new []{ modManifest.UniqueID });
-            return true;
-        }
-        // Farmer doesn't exist in dictionary, add them and create a new list
-        // Because farmer doesn't exist this means that they must have 0 companions, and it should be safe to add this
-        // companion
-        else
-        {
-            CurrentCompanions.Add(farmer, new List<NPC> { npc });
-            monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
-            return true;
-        }
-    }
+    /****
+     ** Utility functions
+     ****/
 
     public bool IsNpcValidCompanion(NPC npc)
     {
@@ -175,94 +223,54 @@ public class Companions
         return false;
     }
     
-    public List<NPC>? GetCurrentCompanions(Farmer player)
+    public List<Companion> GetCurrentCompanions(Farmer farmer)
     {
-        return CurrentCompanions.GetValueOrDefault(player);
+        if (CurrentCompanions.TryGetValue(farmer, out List<Companion>? currentCompanions))
+            return currentCompanions;
+        
+        List<Companion> newCompanions = new List<Companion>();
+        
+        CurrentCompanions.Add(farmer, newCompanions);
+        return newCompanions;
     }
 
-    public bool IsCompanion(NPC npc)
+    public Companion? GetCompanion(NPC npc)
     {
         foreach (var entry in CurrentCompanions)
         {
-            if (entry.Value.Contains(npc))
+            Companion? foundCompanion = entry.Value.Find(companion => companion.npc == npc);
+            
+            if (foundCompanion == null) 
+                continue;
+            
+            return foundCompanion;
+        }
+        
+        return null;
+    }
+    
+    public bool IsNpcCompanion(NPC npc)
+    {
+        foreach (var entry in CurrentCompanions)
+        {
+            if (entry.Value.Any(companion => companion.npc == npc))
                 return true;
         }
 
         return false;
     }
 
-    public bool IsCurrentlyCompanionForFarmer(Farmer farmer, NPC npc)
+    public bool IsNpcCompanionForFarmer(Farmer farmer, NPC npc)
     {
         // Try to get companions for this farmer
-        if (CurrentCompanions.TryGetValue(farmer, out List<NPC>? companions))
+        if (CurrentCompanions.TryGetValue(farmer, out List<Companion>? companions))
         {
             // Check if list of companions contains NPC
-            return companions.Contains(npc);
+            return companions.Any(companion => companion.npc == npc);
         }
 
         // Farmer does not have any companions so this npc isn't currently a companion
         return false;
-    }
-
-    public void CompanionAdd(Farmer farmer, NPC npc)
-    {
-        IMonitor monitor = store.UseMonitor();
-        
-        // Create dialog options
-        string dialogText = $"Ask {npc.Name} to follow?";
-        Response[] responses =
-        [
-            new Response("yes_key", "Yes"),
-            new Response("no_key", "No"),
-        ];
-                
-        void AfterQuestionBehaviour(Farmer farmer, string responseText)
-        {
-            if (responseText == "yes_key")
-            {
-                AddCompanion(farmer, npc);
-                npc.controller = null;
-                npc.temporaryController = null;
-                monitor.Log($"Is {npc.Name} a companion? {IsCompanion(npc)}");
-            }
-            else
-            {
-                        
-            }
-        }
-
-        Game1.currentLocation.createQuestionDialogue(dialogText, responses, AfterQuestionBehaviour, npc);
-    }
-
-    public void CompanionOptions(Farmer farmer, NPC npc)
-    {
-        IMonitor monitor = store.UseMonitor();
-        
-        string dialogText = $"Ask {npc.Name} to leave?";
-        Response[] responses =
-        [
-            new Response("yes_key", "Yes"),
-            new Response("no_key", "No"),
-        ];
-                    
-        void AfterQuestionBehaviour(Farmer farmer, string responseText)
-        {
-            if (responseText == "yes_key")
-            {
-                monitor.Log($"Is {npc.Name} a companion? {IsCompanion(npc)}");
-            }
-            else
-            {
-                        
-            }
-        }
-
-        Game1.currentLocation.createQuestionDialogue(dialogText, responses, AfterQuestionBehaviour, npc);
-    }
-
-    public void CompanionUpdate()
-    {
-        
     }
 
     /****
@@ -291,29 +299,18 @@ public class Companions
         
     }
 
+    /// <summary>
+    /// When a farmer warps between maps get that players NPCs and update their location to be the same map as the
+    /// farmer
+    /// </summary>
     public void OnPlayerWarped(Farmer farmer, GameLocation newLocation)
     {
-        IMonitor monitor = store.UseMonitor();
-        monitor.Log($"Farmer is currently at {farmer.currentLocation}");
-        monitor.Log($"Farmer is warping to {newLocation}");
+        List<Companion> companions = GetCurrentCompanions(farmer);
         
-        foreach (var entry in CurrentCompanions)
+        foreach (Companion companion in companions)
         {
-            // If the selected row is not our current farmer skip it
-            if (entry.Key != farmer)
-            {
-                continue;
-            }
-
-            foreach (NPC npc in entry.Value)
-            {
-                monitor.Log($"Updating companion {npc.Name}'s location to {newLocation}");
-                Game1.warpCharacter(npc, newLocation, farmer.Tile);
-                npc.currentLocation = newLocation;
-            }
+            companion.UpdateLocation(newLocation);
         }
-        
-        // Update current farmers NPCs so that they warp to the same map as farmer
     }
 
     public void OnUpdateTicking()

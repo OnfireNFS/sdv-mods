@@ -83,12 +83,10 @@ public class Events
             var heartLevel = Util.GetHeartLevel(farmer, npc);
             npc.checkForNewCurrentDialogue(heartLevel);
             
-            Companions companions = store.UseCompanions();
-            
             // If NPC is currently not a companion and has a Dialogue message queued --or--
             // NPC cannot be a companion for this farmer:
             // Do nothing and let the dialogue message trigger or default behaviour trigger
-            if (npc.CurrentDialogue.Count > 0 || !companions.IsNpcValidCompanionForFarmer(farmer, npc))
+            if (npc.CurrentDialogue.Count > 0)
             {
                 return;
             }
@@ -97,17 +95,9 @@ public class Events
             IModHelper helper = store.UseHelper();
             helper.Input.Suppress(e.Button);
             
-            // Is the NPC being talked to currently a companion?
-            if (companions.IsCurrentlyCompanionForFarmer(farmer, npc))
-            {
-                // If yes, show options for this companion
-                companions.CompanionOptions(farmer, npc);
-            }
-            else
-            {
-                // If no, show the option to add this NPC as a companion
-                companions.CompanionAdd(farmer, npc);
-            }
+            // Use the interactions store to handle interacting with this NPC
+            Interactions interactions = store.UseInteractions();
+            interactions.HandleInteraction(farmer, npc);
         }
     }
     
