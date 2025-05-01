@@ -1,4 +1,5 @@
 using CompanionAdventures.Framework.Models;
+using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -151,7 +152,12 @@ public class Events
     private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
     {
         Companions companions = store.UseCompanions();
-        
-        companions.DrawCompanions(Game1.player);
+
+        // On each tick update the position of each farmer that has companions
+        foreach (var entry in companions.CurrentCompanions)
+        {
+            Leader leader = entry.Key;
+            leader.UpdateTile(leader.Farmer.Tile);
+        }
     }
 }

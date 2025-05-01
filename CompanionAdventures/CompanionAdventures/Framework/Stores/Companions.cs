@@ -49,7 +49,7 @@ public class Companions
     /****
      ** Companions
      ****/
-    public Dictionary<Farmer, List<Companion>> CurrentCompanions = new();
+    public Dictionary<Leader, List<Companion>> CurrentCompanions = new();
     
     public int CompanionHeartsThreshold = 0;
     public List<string> ValidCompanions = new List<string> {"Abigail", "Penny"};
@@ -73,7 +73,7 @@ public class Companions
         if (IsNpcCompanion(npc))
         {
             Companion existingCompanion = GetCompanion(npc)!;
-            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion for {existingCompanion.farmer.Name}!", LogLevel.Trace);
+            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion for {existingCompanion.leader.Farmer.Name}!", LogLevel.Trace);
             return;
         }
         
@@ -86,7 +86,7 @@ public class Companions
         
         // Get farmers list of companions if they have one
         ModConfig config = store.UseConfig();
-        List<Companion> currentCompanions = GetCurrentCompanions(farmer);
+        List<Companion> currentCompanions = GetOrCreateCurrentCompanions(farmer);
 
         // Early Exit: If farmer has more than or equal to maximum number of companions
         if (currentCompanions.Count >= config.MaxCompanions)
@@ -96,7 +96,8 @@ public class Companions
         }
 
         // Create new companion from NPC and add it to current companions for this farmer
-        Companion companion = new Companion(store, npc, farmer);
+        Leader leader = GetOrCreateLeader(farmer);
+        Companion companion = new Companion(store, npc, leader);
         currentCompanions.Add(companion);
         monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
     }
@@ -141,8 +142,10 @@ public class Companions
             monitor.Log($"Could not remove {npc.Name} as a companion to {farmer.Name}. {npc.Name} is not currently a companion for {farmer.Name}!", LogLevel.Trace);
             return;
         }
+
+        Leader? leader = GetLeader(farmer);
         
-        if (!CurrentCompanions.TryGetValue(farmer, out List<Companion>? companions)) 
+        if (leader == null || !CurrentCompanions.TryGetValue(leader, out List<Companion>? companions)) 
             // Unreachable!
             // This should never happen because we already checked that CurrentCompanions has a value
             return;
@@ -153,31 +156,6 @@ public class Companions
             
         companions.Remove(companion);
         companion.Remove();
-    }
-    
-    
-    public void DrawCompanions(Farmer farmer)
-    {
-        foreach (var entry in CurrentCompanions)
-        {
-            // If the selected row is not our current farmer skip it
-            if (entry.Key != farmer)
-            {
-                continue;
-            }
-
-            foreach (Companion companion in entry.Value)
-            {
-                NPC npc = companion.npc;
-                
-                npc.position.X = (int)farmer.position.X;
-                npc.position.Y = (int)farmer.position.Y;
-            }
-        }
-        
-        // For NPC in CompanionManager.CurrentCompanions
-        // check if NPC farmer is current farmer
-        // update NPC location to follow current farmer
     }
     
     /****
@@ -223,17 +201,6 @@ public class Companions
         return false;
     }
     
-    public List<Companion> GetCurrentCompanions(Farmer farmer)
-    {
-        if (CurrentCompanions.TryGetValue(farmer, out List<Companion>? currentCompanions))
-            return currentCompanions;
-        
-        List<Companion> newCompanions = new List<Companion>();
-        
-        CurrentCompanions.Add(farmer, newCompanions);
-        return newCompanions;
-    }
-
     public Companion? GetCompanion(NPC npc)
     {
         foreach (var entry in CurrentCompanions)
@@ -247,6 +214,52 @@ public class Companions
         }
         
         return null;
+    }
+
+    public Leader? GetLeader(Farmer farmer)
+    {
+        foreach (var entry in CurrentCompanions)
+        {
+            if (entry.Key.Farmer == farmer)
+            {
+                return entry.Key;
+            }
+        }
+
+        return null;
+    }
+
+    public Leader GetOrCreateLeader(Farmer farmer)
+    {
+        foreach (var entry in CurrentCompanions)
+        {
+            if (entry.Key.Farmer == farmer)
+            {
+                return entry.Key;
+            }
+        }
+        
+        Leader newLeader = new Leader(farmer);
+        List<Companion> newCompanions = new List<Companion>();
+        
+        CurrentCompanions.Add(newLeader, newCompanions);
+        return newLeader;
+    }
+    
+    public List<Companion> GetOrCreateCurrentCompanions(Farmer farmer)
+    {
+        Leader? leader = GetLeader(farmer);
+        
+        // if leader exists and currentcompanions has an entry for this leader
+        if (leader != null && CurrentCompanions.TryGetValue(leader, out List<Companion>? currentCompanions))
+            return currentCompanions;
+        
+        // create new leader and companions list for this leader
+        Leader newLeader = new Leader(farmer);
+        List<Companion> newCompanions = new List<Companion>();
+        
+        CurrentCompanions.Add(newLeader, newCompanions);
+        return newCompanions;
     }
     
     public bool IsNpcCompanion(NPC npc)
@@ -262,8 +275,10 @@ public class Companions
 
     public bool IsNpcCompanionForFarmer(Farmer farmer, NPC npc)
     {
+        Leader? leader = GetLeader(farmer);
+        
         // Try to get companions for this farmer
-        if (CurrentCompanions.TryGetValue(farmer, out List<Companion>? companions))
+        if (leader != null && CurrentCompanions.TryGetValue(leader, out List<Companion>? companions))
         {
             // Check if list of companions contains NPC
             return companions.Any(companion => companion.npc == npc);
@@ -305,7 +320,7 @@ public class Companions
     /// </summary>
     public void OnPlayerWarped(Farmer farmer, GameLocation newLocation)
     {
-        List<Companion> companions = GetCurrentCompanions(farmer);
+        List<Companion> companions = GetOrCreateCurrentCompanions(farmer);
         
         foreach (Companion companion in companions)
         {
