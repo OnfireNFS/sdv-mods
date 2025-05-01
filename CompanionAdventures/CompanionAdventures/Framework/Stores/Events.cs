@@ -125,13 +125,13 @@ public class Events
         switch (e.Type)
         {
             case Constants.MessagetypeCompanionAdded:
-                companions.OnCompanionAdded(e.ReadAs<CompanionData>());
+                // companions.OnCompanionAdded(e.ReadAs<CompanionData>());
                 break;
             case Constants.MessagetypeCompanionRemoved:
-                companions.OnCompanionRemoved(e.ReadAs<CompanionData>());
+                // companions.OnCompanionRemoved(e.ReadAs<CompanionData>());
                 break;
             case Constants.MessagetypeCompanionUpdated:
-                companions.OnCompanionUpdated(e.ReadAs<CompanionData>());
+                // companions.OnCompanionUpdated(e.ReadAs<CompanionData>());
                 break;
             default:
             {
@@ -145,19 +145,16 @@ public class Events
     private void OnPlayerWarped(object? sender, WarpedEventArgs e)
     {
         Companions companions = store.UseCompanions();
-        
-        companions.OnPlayerWarped(e.Player, e.NewLocation);
+        Leader? leader = companions.GetLeader(e.Player);
+
+        // If the player that warped is a leader, run the update location function
+        leader?.UpdateLocation();
     }
     
     private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
     {
         Companions companions = store.UseCompanions();
 
-        // On each tick update the position of each farmer that has companions
-        foreach (var entry in companions.CurrentCompanions)
-        {
-            Leader leader = entry.Key;
-            leader.UpdateTile(leader.Farmer.Tile);
-        }
+        companions.UpdateLeaderPosition();
     }
 }

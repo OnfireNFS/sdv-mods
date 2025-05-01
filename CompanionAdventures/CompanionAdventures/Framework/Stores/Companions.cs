@@ -5,6 +5,7 @@ namespace CompanionAdventures.Framework;
 using StardewModdingAPI;
 using StardewValley;
 
+#region Store Setup
 public partial class Store
 {
     private Companions? _companions = null;
@@ -27,12 +28,14 @@ public partial class Store
         return _companions!;
     }
 }
+#endregion
 
 /// <summary>
 /// Manages creating and removing companions for this player
 /// </summary>
 public class Companions
 {
+    #region Store Setup
     /****
      ** Store Setup
      ****/
@@ -45,22 +48,15 @@ public class Companions
     {
         store._Companions(new Companions(store));
     }
-    
+    #endregion
+
     /****
      ** Companions
      ****/
-    public Dictionary<Leader, List<Companion>> CurrentCompanions = new();
+    public Dictionary<Farmer, Leader> CurrentLeaders = new ();
     
     public int CompanionHeartsThreshold = 0;
     public List<string> ValidCompanions = new List<string> {"Abigail", "Penny"};
-    
-    // Functions this needs to handle
-    // Add companion local/net
-    //  Remove from default scheduling
-    // Remove companion local/net
-    //  Resume default scheduling
-    // Update companion location local/net
-    // Handle game tick
 
     /// <summary>
     /// Attempts to add the npc as a companion to the provided farmer
@@ -68,65 +64,24 @@ public class Companions
     public void Add(Farmer farmer, NPC npc)
     {
         IMonitor monitor = store.UseMonitor();
-        
+
         // Early Exit: Check if NPC is already a companion
-        if (IsNpcCompanion(npc))
+        if (IsNpcCompanion(npc, out Farmer? currentFarmer))
         {
-            Companion existingCompanion = GetCompanion(npc)!;
-            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion for {existingCompanion.leader.Farmer.Name}!", LogLevel.Trace);
+            // Companion existingCompanion = GetCompanion(npc)!;
+            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion for {currentFarmer!.Name}!", LogLevel.Trace);
             return;
         }
         
         // Early Exit: Check if NPC can be a companion for this farmer
-        if (!IsNpcValidCompanionForFarmer(farmer, npc))
+        if (!IsNpcValidCompanionForFarmer(npc, farmer))
         {
             monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is not a valid companion for {farmer.Name}!", LogLevel.Trace);
             return;
         }
-        
-        // Get farmers list of companions if they have one
-        ModConfig config = store.UseConfig();
-        List<Companion> currentCompanions = GetOrCreateCurrentCompanions(farmer);
 
-        // Early Exit: If farmer has more than or equal to maximum number of companions
-        if (currentCompanions.Count >= config.MaxCompanions)
-        {
-            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {farmer.Name} already has the maximum number of companions!", LogLevel.Trace);
-            return;
-        }
-
-        // Create new companion from NPC and add it to current companions for this farmer
-        Leader leader = GetOrCreateLeader(farmer);
-        Companion companion = new Companion(store, npc, leader);
-        currentCompanions.Add(companion);
-        monitor.Log($"Successfully added {npc.Name} as a companion to {farmer.Name}.", LogLevel.Trace);
-    }
-
-    /// <summary>
-    /// Attempts to remove the npc as a companion to any farmer
-    /// </summary>
-    public void Remove(NPC npc)
-    {
-        IMonitor monitor = store.UseMonitor();
-        
-        // Early Exit: Cannot remove companion as NPC is not currently a companion
-        if (!IsNpcCompanion(npc))
-        {
-            monitor.Log($"Could not remove {npc.Name} as a companion. {npc.Name} is not currently a companion!", LogLevel.Trace);
-            return;
-        }
-
-        foreach (var entry in CurrentCompanions)
-        {
-            Companion? companion = entry.Value.Find(_companion => _companion.npc == npc);
-            
-            if (companion == null) 
-                continue;
-            
-            entry.Value.Remove(companion);
-            companion.Remove();
-            return;
-        }
+        Leader leader = GetLeader(farmer) ?? CreateLeader(farmer);
+        leader.AddCompanion(npc);
     }
     
     /// <summary>
@@ -135,27 +90,48 @@ public class Companions
     public void Remove(Farmer farmer, NPC npc)
     {
         IMonitor monitor = store.UseMonitor();
-        
-        // Early Exit: Cannot remove companion as NPC is not currently a companion for this farmer
-        if (!IsNpcCompanionForFarmer(farmer, npc))
-        {
-            monitor.Log($"Could not remove {npc.Name} as a companion to {farmer.Name}. {npc.Name} is not currently a companion for {farmer.Name}!", LogLevel.Trace);
-            return;
-        }
 
         Leader? leader = GetLeader(farmer);
+
+        if (leader == null)
+        {
+            monitor.Log($"Could not remove {npc.Name} as a companion. {farmer.Name} is not currently a leader!", LogLevel.Trace);
+            return;
+        }
         
-        if (leader == null || !CurrentCompanions.TryGetValue(leader, out List<Companion>? companions)) 
-            // Unreachable!
-            // This should never happen because we already checked that CurrentCompanions has a value
+        leader.RemoveCompanion(npc);
+
+        if (leader.Companions.Count < 1)
+        {
+            RemoveLeader(farmer);
+        }
+    }
+
+    private Leader CreateLeader(Farmer farmer)
+    {
+        Leader leader = new Leader(store, farmer);
+        CurrentLeaders.Add(farmer, leader);
+        return leader;
+    }
+
+    public Leader? GetLeader(Farmer farmer)
+    {
+        if (CurrentLeaders.TryGetValue(farmer, out Leader? leader))
+            return leader;
+        
+        return null;
+    }
+    
+    private void RemoveLeader(Farmer farmer)
+    {
+        Leader? leader = GetLeader(farmer);
+
+        // Early Exit: If farmer isn't a leader there is no leader to remove
+        if (leader == null) 
             return;
         
-        // Get companion from current companions list (this should always return a value because we checked above
-        // that the npc is a valid companion for this farmer)
-        Companion companion = companions.Find(companion => companion.npc == npc)!;
-            
-        companions.Remove(companion);
-        companion.Remove();
+        CurrentLeaders.Remove(farmer);
+        leader.Dispose();
     }
     
     /****
@@ -178,7 +154,7 @@ public class Companions
         return false;
     }
 
-    public bool IsNpcValidCompanionForFarmer(Farmer farmer, NPC npc)
+    public bool IsNpcValidCompanionForFarmer(NPC npc, Farmer farmer)
     {
         IMonitor monitor = store.UseMonitor();
         
@@ -201,75 +177,18 @@ public class Companions
         return false;
     }
     
-    public Companion? GetCompanion(NPC npc)
+    public bool IsNpcCompanion(NPC npc, out Farmer? farmer)
     {
-        foreach (var entry in CurrentCompanions)
+        foreach (var entry in CurrentLeaders)
         {
-            Companion? foundCompanion = entry.Value.Find(companion => companion.npc == npc);
-            
-            if (foundCompanion == null) 
-                continue;
-            
-            return foundCompanion;
-        }
-        
-        return null;
-    }
-
-    public Leader? GetLeader(Farmer farmer)
-    {
-        foreach (var entry in CurrentCompanions)
-        {
-            if (entry.Key.Farmer == farmer)
+            if (entry.Value.IsCompanion(npc))
             {
-                return entry.Key;
-            }
-        }
-
-        return null;
-    }
-
-    public Leader GetOrCreateLeader(Farmer farmer)
-    {
-        foreach (var entry in CurrentCompanions)
-        {
-            if (entry.Key.Farmer == farmer)
-            {
-                return entry.Key;
-            }
-        }
-        
-        Leader newLeader = new Leader(farmer);
-        List<Companion> newCompanions = new List<Companion>();
-        
-        CurrentCompanions.Add(newLeader, newCompanions);
-        return newLeader;
-    }
-    
-    public List<Companion> GetOrCreateCurrentCompanions(Farmer farmer)
-    {
-        Leader? leader = GetLeader(farmer);
-        
-        // if leader exists and currentcompanions has an entry for this leader
-        if (leader != null && CurrentCompanions.TryGetValue(leader, out List<Companion>? currentCompanions))
-            return currentCompanions;
-        
-        // create new leader and companions list for this leader
-        Leader newLeader = new Leader(farmer);
-        List<Companion> newCompanions = new List<Companion>();
-        
-        CurrentCompanions.Add(newLeader, newCompanions);
-        return newCompanions;
-    }
-    
-    public bool IsNpcCompanion(NPC npc)
-    {
-        foreach (var entry in CurrentCompanions)
-        {
-            if (entry.Value.Any(companion => companion.npc == npc))
+                farmer = entry.Key;
                 return true;
+            }
         }
 
+        farmer = null;
         return false;
     }
 
@@ -277,59 +196,22 @@ public class Companions
     {
         Leader? leader = GetLeader(farmer);
         
-        // Try to get companions for this farmer
-        if (leader != null && CurrentCompanions.TryGetValue(leader, out List<Companion>? companions))
-        {
-            // Check if list of companions contains NPC
-            return companions.Any(companion => companion.npc == npc);
-        }
-
-        // Farmer does not have any companions so this npc isn't currently a companion
+        if (leader != null)
+            return leader.IsCompanion(npc);
+        
         return false;
     }
 
-    /****
-     ** Events
-     ****/
-    public void OnCompanionAdded(CompanionData data)
-    {
-        
-    }
-
-    public void OnCompanionRemoved(CompanionData data)
-    {
-        
-    }
-
     /// <summary>
-    /// Uses the provided data to update the provided companion with the provided information
-    ///
-    /// Useful when the companion is managed by another source (eg: another player in a multiplayer game) and the
-    /// position or state information has been already calculated by another client and the display just needs to be
-    /// updated in this client.
+    /// Calls leader.UpdateTile for each Farmer that is currently a Leader
     /// </summary>
-    /// <param name="data"></param>
-    public void OnCompanionUpdated(CompanionData data)
+    public void UpdateLeaderPosition()
     {
-        
-    }
-
-    /// <summary>
-    /// When a farmer warps between maps get that players NPCs and update their location to be the same map as the
-    /// farmer
-    /// </summary>
-    public void OnPlayerWarped(Farmer farmer, GameLocation newLocation)
-    {
-        List<Companion> companions = GetOrCreateCurrentCompanions(farmer);
-        
-        foreach (Companion companion in companions)
+        // On each tick update the position of each farmer that has companions
+        foreach (var entry in CurrentLeaders)
         {
-            companion.UpdateLocation(newLocation);
+            Leader leader = entry.Value;
+            leader.UpdateTile();
         }
-    }
-
-    public void OnUpdateTicking()
-    {
-        // Draw all NPCs
     }
 }

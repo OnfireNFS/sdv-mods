@@ -9,11 +9,13 @@ namespace CompanionAdventures.Framework.Models;
 /// Class responsible for holding and managing the state of a single companion
 /// </summary>
 /// <param name="npc"></param>
-public class Companion
+public class Companion: IDisposable
 {
     private readonly Store store;
     public NPC npc;
     public Leader leader;
+    
+    private IDisposable leaderTile;
     private IDisposable leaderLocation;
 
     public Companion(Store store, NPC npc, Leader leader)
@@ -21,32 +23,42 @@ public class Companion
         this.store = store;
         this.npc = npc;
         this.leader = leader;
+        
+        IMonitor monitor = store.UseMonitor();
+        monitor.Log($"Creating Companion instance for {npc.Name}");
 
-        this.leaderLocation = leader.Tile.Subscribe(
+        this.leaderTile = leader.Tile.Subscribe(
             tile => UpdateTile(tile)
+        );
+        this.leaderLocation = leader.Location.Subscribe(
+            location => UpdateLocation(location)
         );
     }
 
     private void UpdateTile(Vector2 tile)
     {
-        IMonitor monitor = store.UseMonitor();
-        
         npc.position.X = (int)tile.X * 64;
         npc.position.Y = (int)tile.Y * 64;
-        
-        monitor.Log($"{npc.Name}: Updating position to {tile.X * 64}, {tile.Y * 64}");
     }
 
     public void UpdateLocation(GameLocation newLocation)
     {
-        IMonitor monitor = store.UseMonitor();
+        // Don't warp this Companion if they are already on this map
+        if(npc.currentLocation.Equals(newLocation))
+            return;
         
+        IMonitor monitor = store.UseMonitor();
         monitor.Log($"Updating companion {npc.Name}'s location to {newLocation}");
-        Game1.warpCharacter(npc, newLocation, leader.Farmer.Tile);
+        
+        Game1.warpCharacter(npc, newLocation, leader.Tile.Value);
     }
 
-    public void Remove()
+    public void Dispose()
     {
+        IMonitor monitor = store.UseMonitor();
+        monitor.Log($"Removing Companion instance for {npc.Name}");
+        
+        leaderTile.Dispose();
         leaderLocation.Dispose();
     }
 }
