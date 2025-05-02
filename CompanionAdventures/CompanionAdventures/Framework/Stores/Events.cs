@@ -49,10 +49,7 @@ public class Events
         IModEvents events = helper.Events;
         
         events.GameLoop.GameLaunched += OnGameLaunched;
-        events.GameLoop.UpdateTicking += OnUpdateTicking;
         events.Input.ButtonPressed += OnButtonPressed;
-        events.Multiplayer.ModMessageReceived += OnMessageReceived;
-        events.Player.Warped += OnPlayerWarped;
     }
     
     /// <summary>
@@ -107,54 +104,5 @@ public class Events
         IModHelper helper = store.UseHelper();
         
         var api = helper.ModRegistry.GetApi<IContentPack>("Pathoschild.ContentPatcher");
-    }
-    
-    private void OnMessageReceived(object? sender, ModMessageReceivedEventArgs e)
-    {
-        IManifest modManifest = store.UseManifest();
-        
-        // Early Exit: The message received was from a different mod
-        if (e.FromModID != modManifest.UniqueID)
-        {
-            return;
-        }
-        
-        Companions companions = store.UseCompanions();
-        IMonitor monitor = store.UseMonitor();
-
-        switch (e.Type)
-        {
-            case Constants.MessagetypeCompanionAdded:
-                // companions.OnCompanionAdded(e.ReadAs<CompanionData>());
-                break;
-            case Constants.MessagetypeCompanionRemoved:
-                // companions.OnCompanionRemoved(e.ReadAs<CompanionData>());
-                break;
-            case Constants.MessagetypeCompanionUpdated:
-                // companions.OnCompanionUpdated(e.ReadAs<CompanionData>());
-                break;
-            default:
-            {
-                string data = e.ReadAs<string>();
-                monitor.Log($"Received unknown event type: \"{e.Type}\" event with data: \"{data}\"", LogLevel.Error);
-                break;
-            }
-        }
-    }
-
-    private void OnPlayerWarped(object? sender, WarpedEventArgs e)
-    {
-        Companions companions = store.UseCompanions();
-        Leader? leader = companions.GetLeader(e.Player);
-
-        // If the player that warped is a leader, run the update location function
-        leader?.UpdateLocation();
-    }
-    
-    private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
-    {
-        Companions companions = store.UseCompanions();
-
-        companions.UpdateLeaderPosition();
     }
 }

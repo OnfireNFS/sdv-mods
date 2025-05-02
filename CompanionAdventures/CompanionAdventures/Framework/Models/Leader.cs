@@ -1,6 +1,7 @@
 using System.Reactive.Subjects;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using StardewValley;
 
 namespace CompanionAdventures.Framework.Models;
@@ -32,6 +33,8 @@ public class Leader: IDisposable
         
         Tile = new BehaviorSubject<Vector2>(farmer.Tile);
         Location = new BehaviorSubject<GameLocation>(farmer.currentLocation);
+        
+        RegisterEvents();
     }
 
     public void AddCompanion(NPC npc)
@@ -74,23 +77,6 @@ public class Leader: IDisposable
     }
     
     /// <summary>
-    /// Checks the Location that the Leaders Farmer is currently at. If it is different from the Location the Farmer was
-    /// at the last time this function was called it will set Leader.Location (not Leader.Farmer.Tile) property which is
-    /// reactive and will notify subscribers of the change.
-    ///
-    /// This function is cheap to run because it only does something when the data is actually changed
-    /// </summary>
-    public void UpdateTile()
-    {
-        // Early exit: If the stored Tile matches current Farmer Tile do nothing
-        if (Tile.Value.Equals(Farmer.Tile))
-            return;
-        
-        Tile.OnNext(Farmer.Tile);
-    }
-
-
-    /// <summary>
     /// Checks the Tile that the Leaders Farmer is currently at. If it is different from the Tile the Farmer was at the
     /// last time this function was called it will set Leader.Location (not Leader.Farmer.currentLocation) property
     /// which is reactive and will notify subscribers of the change. This function will also update Leader.Tile if
@@ -108,6 +94,60 @@ public class Leader: IDisposable
         UpdateTile();
     }
     
+    /// <summary>
+    /// Checks the Location that the Leaders Farmer is currently at. If it is different from the Location the Farmer was
+    /// at the last time this function was called it will set Leader.Location (not Leader.Farmer.Tile) property which is
+    /// reactive and will notify subscribers of the change.
+    ///
+    /// This function is cheap to run because it only does something when the data is actually changed
+    /// </summary>
+    public void UpdateTile()
+    {
+        // Early exit: If the stored Tile matches current Farmer Tile do nothing
+        if (Tile.Value.Equals(Farmer.Tile))
+            return;
+        
+        Tile.OnNext(Farmer.Tile);
+    }
+
+    /****
+     ** Events
+     ****/
+    private void RegisterEvents()
+    {
+        IModHelper helper = store.UseHelper();
+        IMonitor monitor = store.UseMonitor();
+        
+        monitor.Log($"Registering events for Leader {Farmer.Name}");
+        helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
+        helper.Events.Player.Warped += OnPlayerWarped;
+    }
+
+    private void UnregisterEvents()
+    {
+        IModHelper helper = store.UseHelper();
+        IMonitor monitor = store.UseMonitor();
+        
+        monitor.Log($"Unregistering events for Leader {Farmer.Name}");
+        helper.Events.GameLoop.UpdateTicking -= OnUpdateTicking;
+        helper.Events.Player.Warped -= OnPlayerWarped;
+    }
+    
+    private void OnPlayerWarped(object? sender, WarpedEventArgs e)
+    {
+        if (e.Player != Farmer)
+            return;
+        
+        // If the player that warped is our Farmer, run the update location function
+        UpdateLocation();
+    }
+    
+    private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
+    {
+        // Every tick, check if our Farmers tile has changed
+        UpdateTile();
+    }
+    
     public void Dispose()
     {
         IMonitor monitor = store.UseMonitor();
@@ -117,5 +157,7 @@ public class Leader: IDisposable
         {
             companion.Dispose();
         }
+        
+        UnregisterEvents();
     }
 }

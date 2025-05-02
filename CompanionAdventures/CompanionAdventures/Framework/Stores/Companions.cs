@@ -201,17 +201,4 @@ public class Companions
         
         return false;
     }
-
-    /// <summary>
-    /// Calls leader.UpdateTile for each Farmer that is currently a Leader
-    /// </summary>
-    public void UpdateLeaderPosition()
-    {
-        // On each tick update the position of each farmer that has companions
-        foreach (var entry in CurrentLeaders)
-        {
-            Leader leader = entry.Value;
-            leader.UpdateTile();
-        }
-    }
 }

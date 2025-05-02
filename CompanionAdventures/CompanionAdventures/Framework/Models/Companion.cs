@@ -53,6 +53,32 @@ public class Companion: IDisposable
         Game1.warpCharacter(npc, newLocation, leader.Tile.Value);
     }
 
+    /****
+     ** Events
+     ****/
+    private void RegisterEvents()
+    {
+        IModHelper helper = store.UseHelper();
+        IMonitor monitor = store.UseMonitor();
+        
+        monitor.Log($"Registering events for Companion {npc.Name}");
+        helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
+    }
+
+    private void UnregisterEvents()
+    {
+        IModHelper helper = store.UseHelper();
+        IMonitor monitor = store.UseMonitor();
+        
+        monitor.Log($"Unregistering events for Companion {npc.Name}");
+        helper.Events.GameLoop.UpdateTicking -= OnUpdateTicking;
+    }
+    
+    private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
+    {
+        // Calculate new position for this npc or something?
+    }
+    
     public void Dispose()
     {
         IMonitor monitor = store.UseMonitor();
