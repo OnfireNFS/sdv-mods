@@ -9,20 +9,9 @@ namespace CompanionAdventures.Framework;
 #region Store Setup
 public partial class Store
 {
-    // Create private variable to hold an instance of Events (Similar to a singleton)
-    private Events? _events = null;
-
-    public void _Events(Events events)
-    {
-        _events ??= events;
-    }
-
     public Events UseEvents()
     {
-        if (_events == null)
-            Events.CreateStore(this);
-
-        return _events!;
+        return DefineStore<Events>();
     }
 }
 #endregion
@@ -32,22 +21,9 @@ public partial class Store
 ///
 /// For example: handling controller input or loading assets
 /// </summary>
-public class Events
+public class Events: IStore
 {
-    #region Store Setup
-    /****
-     ** Store Setup
-     ****/
-    private Store store;
-    private Events(Store store)
-    {
-        this.store = store;
-    }
-    public static void CreateStore(Store store)
-    {
-        store._Events(new Events(store));
-    }
-    #endregion
+    public required Store store { get; set; }
     
     /****
      ** Events

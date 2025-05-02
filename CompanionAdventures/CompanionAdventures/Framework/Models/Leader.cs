@@ -17,11 +17,10 @@ public class Leader: IDisposable
     private readonly Store store;
     
     public Farmer Farmer;
-    public List<Companion> Companions = new List<Companion>();
+    public List<Companion> Companions = new();
     
     public readonly BehaviorSubject<Vector2> Tile;
     public readonly BehaviorSubject<GameLocation> Location;
-    
     
     public Leader(Store store, Farmer farmer)
     {

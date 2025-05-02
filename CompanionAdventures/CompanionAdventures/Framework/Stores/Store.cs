@@ -25,6 +25,23 @@ namespace CompanionAdventures.Framework;
 /// <param name="mod"></param>
 public partial class Store(CompanionAdventures mod)
 {
+    private Dictionary<Type, IStore> _stores = new();
+
+    private T DefineStore<T>() where T : IStore
+    {
+        if (_stores.TryGetValue(typeof(T), out IStore? store))
+        {
+            return (T)store;
+        }
+        
+        T newStore = Activator.CreateInstance<T>();
+        newStore.store = this;
+        
+        _stores.Add(typeof(T), newStore);
+        
+        return newStore;
+    }
+    
     // returns the config for this instance of mod
     public ModConfig UseConfig()
     {
@@ -45,4 +62,9 @@ public partial class Store(CompanionAdventures mod)
     {
         return mod.Monitor;
     }
+}
+
+public interface IStore
+{
+    Store store { set; }
 }

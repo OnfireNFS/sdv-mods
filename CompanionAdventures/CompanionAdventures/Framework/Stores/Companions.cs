@@ -8,25 +8,9 @@ using StardewValley;
 #region Store Setup
 public partial class Store
 {
-    // Create private variable to hold an instance of Companions (Similar to a singleton)
-    private Companions? _companions = null;
-    
-    /// <summary>
-    /// Sets the internal Companions instance if Companions is currently null. If an instance already
-    /// exists does nothing.
-    /// </summary>
-    /// <param name="companions"></param>
-    public void _Companions(Companions companions)
-    {
-        _companions ??= companions;
-    }
-    
     public Companions UseCompanions()
     {
-        if (_companions == null)
-            Companions.CreateStore(this);
-        
-        return _companions!;
+        return DefineStore<Companions>();
     }
 }
 #endregion
@@ -35,22 +19,9 @@ public partial class Store
 /// Holds functions for creating and removing companions as well as some utility functions for determining if npcs are
 /// valid companions. Also handles creating and removing Leader and Companion classes automatically
 /// </summary>
-public class Companions
+public class Companions: IStore
 {
-    #region Store Setup
-    /****
-     ** Store Setup
-     ****/
-    private Store store;
-    private Companions(Store store)
-    {
-        this.store = store;
-    }
-    public static void CreateStore(Store store)
-    {
-        store._Companions(new Companions(store));
-    }
-    #endregion
+    public required Store store { get; set; }
 
     /****
      ** Companions
@@ -197,10 +168,10 @@ public class Companions
     public bool IsNpcCompanionForFarmer(Farmer farmer, NPC npc)
     {
         Leader? leader = GetLeader(farmer);
-        
+
         if (leader != null)
             return leader.IsCompanion(npc);
-        
+
         return false;
     }
 }

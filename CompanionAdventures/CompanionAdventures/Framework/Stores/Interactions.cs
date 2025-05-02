@@ -5,25 +5,9 @@ namespace CompanionAdventures.Framework;
 #region Store Setup
 public partial class Store
 {
-    // Create private variable to hold an instance of Interactions (Similar to a singleton)
-    private Interactions? _interactions = null;
-    
-    /// <summary>
-    /// Sets the internal Dialogue instance if Dialogue is currently null. If an instance already
-    /// exists does nothing.
-    /// </summary>
-    /// <param name="interactions"></param>
-    public void _Interactions(Interactions interactions)
-    {
-        _interactions ??= interactions;
-    }
-    
     public Interactions UseInteractions()
     {
-        if (_interactions == null)
-            Interactions.CreateStore(this);
-        
-        return _interactions!;
+        return DefineStore<Interactions>();
     }
 }
 #endregion
@@ -33,22 +17,9 @@ public partial class Store
 ///
 /// For example: handling controller input or loading assets
 /// </summary>
-public class Interactions
+public class Interactions: IStore
 {
-    #region Store Setup
-    /****
-     ** Store Setup
-     ****/
-    private Store store;
-    private Interactions(Store store)
-    {
-        this.store = store;
-    }
-    public static void CreateStore(Store store)
-    {
-        store._Interactions(new Interactions(store));
-    }
-    #endregion
+    public required Store store { get; set; }
     
     /// <summary>
     /// Handles when a NPC is interacted with
