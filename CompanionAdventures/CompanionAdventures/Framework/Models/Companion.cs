@@ -109,6 +109,7 @@ public class Companion: IDisposable
             int currentTime = Game1.timeOfDay;
             
             // Start at the current time of day and work back to the last scheduled path
+            // Check all the way to 0 instead of stopping at 600 to see if a zero schedule exists
             while (currentTime > 0)
             {
                 if (npc.Schedule.TryGetValue(currentTime, out SchedulePathDescription? schedule))
@@ -127,7 +128,7 @@ public class Companion: IDisposable
             : new Point((int)npc.DefaultPosition.X / 64, (int)npc.DefaultPosition.Y / 64);
         string defaultLocation = npc.isMarried() ? "BusStop" : npc.DefaultMap;
         
-        // Generate a new route from the npc's current location to whereever they should currently be according to their
+        // Generate a new route from the npc's current location to wherever they should currently be according to their
         // schedule
         SchedulePathDescription returnToSchedule = npc.pathfindToNextScheduleLocation(
             npc.ScheduleKey, // This is only used to show error messages
