@@ -2,8 +2,10 @@ using StardewValley;
 
 namespace CompanionAdventures.Framework;
 
+#region Store Setup
 public partial class Store
 {
+    // Create private variable to hold an instance of Interactions (Similar to a singleton)
     private Interactions? _interactions = null;
     
     /// <summary>
@@ -24,9 +26,16 @@ public partial class Store
         return _interactions!;
     }
 }
+#endregion
 
+/// <summary>
+/// Holds global events that are not specific to a leader or companion
+///
+/// For example: handling controller input or loading assets
+/// </summary>
 public class Interactions
 {
+    #region Store Setup
     /****
      ** Store Setup
      ****/
@@ -39,6 +48,7 @@ public class Interactions
     {
         store._Interactions(new Interactions(store));
     }
+    #endregion
     
     /// <summary>
     /// Handles when a NPC is interacted with

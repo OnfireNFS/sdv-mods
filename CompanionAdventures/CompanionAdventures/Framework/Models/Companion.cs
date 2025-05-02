@@ -142,16 +142,32 @@ public class Companion: IDisposable
             previousSchedule?.endOfRouteBehavior ?? null,
             previousSchedule?.endOfRouteMessage ?? null
         );
+
+        // Were we able to make a valid path from the current location to where the npc should be?
+        if (returnToSchedule.route != null)
+        {
+            // Add the newly created return schedule to the npc's daily schedule
+            npc.Schedule?.Add(Game1.timeOfDay, returnToSchedule);
+        }
+        else
+        {
+            // TODO: Attempt to create a route to the exit of this map, then warp to 
+        }
         
         // The last attempted schedule could've been the same tick as the current time of day
         // Set the last attempted check time to be 10 minutes before that so that the newly added
         // schedule will always be run immediately
         npc.lastAttemptedSchedule -= 10;
         
-        // Add the newly created return schedule to the npc's daily schedule
-        npc.Schedule?.Add(Game1.timeOfDay, returnToSchedule);
-        
-        // Run
+        // Run check schedule to run the return to location schedule
         npc.checkSchedule(Game1.timeOfDay);
+        
+        // TODO: What if returnToSchedule.route is null? A valid path could not be found between npc's current location
+        //  and target location, maybe route towards exit and the warp them?
+        //  Maybe write a check so that while the npc is on the "return" route we check to see if the previous 
+        //  route is still where they should be pathing to. Eg: Abigail is dismissed on Monday at 8:40, she doesn't 
+        //  have a previous schedule so she paths to her bed, by 9:10 she hasn't reached it, at this point she should
+        //  be pathing to the kitchen, update route so that it is current location -> kitchen instead of current
+        //  location -> bed
     }
 }

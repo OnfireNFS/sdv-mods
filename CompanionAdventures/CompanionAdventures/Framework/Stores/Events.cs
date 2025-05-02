@@ -6,8 +6,10 @@ using StardewValley;
 
 namespace CompanionAdventures.Framework;
 
+#region Store Setup
 public partial class Store
 {
+    // Create private variable to hold an instance of Events (Similar to a singleton)
     private Events? _events = null;
 
     public void _Events(Events events)
@@ -23,9 +25,16 @@ public partial class Store
         return _events!;
     }
 }
+#endregion
 
+/// <summary>
+/// Holds global events that are not specific to a leader or companion
+///
+/// For example: handling controller input or loading assets
+/// </summary>
 public class Events
 {
+    #region Store Setup
     /****
      ** Store Setup
      ****/
@@ -38,11 +47,11 @@ public class Events
     {
         store._Events(new Events(store));
     }
+    #endregion
     
     /****
      ** Events
      ****/
-
     public void RegisterEvents()
     {
         IModHelper helper = store.UseHelper();
@@ -60,7 +69,7 @@ public class Events
     /// </summary>
     /// <param name="sender">The event sender.</param>
     /// <param name="e">The event data.</param>
-    private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
+    public void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
     {
         // Ignore if player isn't in the world or if they are in a cutscene
         if (!Context.IsPlayerFree)

@@ -8,6 +8,7 @@ using StardewValley;
 #region Store Setup
 public partial class Store
 {
+    // Create private variable to hold an instance of Companions (Similar to a singleton)
     private Companions? _companions = null;
     
     /// <summary>
@@ -31,7 +32,8 @@ public partial class Store
 #endregion
 
 /// <summary>
-/// Manages creating and removing companions for this player
+/// Holds functions for creating and removing companions as well as some utility functions for determining if npcs are
+/// valid companions. Also handles creating and removing Leader and Companion classes automatically
 /// </summary>
 public class Companions
 {
@@ -114,7 +116,7 @@ public class Companions
         return leader;
     }
 
-    public Leader? GetLeader(Farmer farmer)
+    private Leader? GetLeader(Farmer farmer)
     {
         if (CurrentLeaders.TryGetValue(farmer, out Leader? leader))
             return leader;
