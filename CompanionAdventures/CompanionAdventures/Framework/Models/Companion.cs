@@ -28,12 +28,8 @@ public class Companion: IDisposable
         IMonitor monitor = store.UseMonitor();
         monitor.Log($"Creating Companion instance for {npc.Name}");
 
-        this.leaderTile = leader.Tile.Subscribe(
-            tile => UpdateTile(tile)
-        );
-        this.leaderLocation = leader.Location.Subscribe(
-            location => UpdateLocation(location)
-        );
+        this.leaderTile = leader.Tile.Subscribe(UpdateTile);
+        this.leaderLocation = leader.Location.Subscribe(UpdateLocation);
         
         // Stop NPC Movement
         npc.controller = null;
