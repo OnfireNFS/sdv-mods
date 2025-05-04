@@ -22,14 +22,17 @@ public partial class Store
 public class Companions: IStore
 {
     public required Store store { get; set; }
-
-    /****
-     ** Companions
-     ****/
-    public Dictionary<Farmer, Leader> CurrentLeaders = new ();
     
-    public int CompanionHeartsThreshold = 0;
-    public List<string> ValidCompanions = new List<string> {"Abigail", "Penny"};
+    /****
+     ** Config
+     ****/
+    private int CompanionHeartsThreshold = 0;
+    private List<string> ValidCompanions = new List<string> {"Abigail", "Penny"};
+    
+    /****
+     ** State
+     ****/
+    private Dictionary<Farmer, Leader> CurrentLeaders = new ();
 
     /// <summary>
     /// Attempts to add the npc as a companion to the provided farmer
