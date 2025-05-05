@@ -24,8 +24,7 @@ public class Companion
         this.npc = npc;
         this.leader = leader;
         
-        IMonitor monitor = store.UseMonitor();
-        monitor.Log($"Creating Companion instance for {npc.Name}");
+        store.Monitor.Log($"Creating Companion instance for {npc.Name}");
 
         this.leaderTile = leader.Tile.Subscribe(UpdateTile);
         this.leaderLocation = leader.Location.Subscribe(UpdateLocation);
@@ -51,8 +50,7 @@ public class Companion
         if(npc.currentLocation.Equals(newLocation))
             return;
         
-        IMonitor monitor = store.UseMonitor();
-        monitor.Log($"Updating companion {npc.Name}'s location to {newLocation}");
+        store.Monitor.Log($"Updating companion {npc.Name}'s location to {newLocation}");
         
         Game1.warpCharacter(npc, newLocation, leader.Tile.Value);
     }
@@ -62,20 +60,14 @@ public class Companion
      ****/
     private void RegisterEvents()
     {
-        IModHelper helper = store.UseHelper();
-        IMonitor monitor = store.UseMonitor();
-        
-        monitor.Log($"Registering events for Companion {npc.Name}");
-        helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
+        store.Monitor.Log($"Registering events for Companion {npc.Name}");
+        store.Helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
     }
 
     private void UnregisterEvents()
     {
-        IModHelper helper = store.UseHelper();
-        IMonitor monitor = store.UseMonitor();
-        
-        monitor.Log($"Unregistering events for Companion {npc.Name}");
-        helper.Events.GameLoop.UpdateTicking -= OnUpdateTicking;
+        store.Monitor.Log($"Unregistering events for Companion {npc.Name}");
+        store.Helper.Events.GameLoop.UpdateTicking -= OnUpdateTicking;
     }
     
     private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
@@ -85,8 +77,7 @@ public class Companion
     
     public void Remove()
     {
-        IMonitor monitor = store.UseMonitor();
-        monitor.Log($"Removing Companion instance for {npc.Name}");
+        store.Monitor.Log($"Removing Companion instance for {npc.Name}");
         
         // Remove reactive listeners
         leaderTile.Dispose();

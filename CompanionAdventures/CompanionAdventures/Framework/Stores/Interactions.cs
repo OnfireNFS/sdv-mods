@@ -5,10 +5,7 @@ namespace CompanionAdventures.Framework;
 #region Store Setup
 public partial class Store
 {
-    public Interactions UseInteractions()
-    {
-        return DefineStore<Interactions>();
-    }
+    public Interactions Interactions => DefineStore<Interactions>();
 }
 #endregion
 
@@ -17,10 +14,8 @@ public partial class Store
 ///
 /// For example: handling controller input or loading assets
 /// </summary>
-public class Interactions: IStore
+public class Interactions: StoreBase
 {
-    public required Store store { get; set; }
-    
     /// <summary>
     /// Handles when a NPC is interacted with
     /// </summary>
@@ -28,16 +23,14 @@ public class Interactions: IStore
     /// <param name="npc">The NPC being interacted with</param>
     public void HandleInteraction(Farmer farmer, NPC npc)
     {
-        Companions companions = store.UseCompanions();
-        
         // Early Exit: If this npc cannot be a companion then return
-        if (!companions.IsNpcValidCompanion(npc))
+        if (!store.Companions.IsNpcValidCompanion(npc))
         {
             return;
         }
         
         // Is the NPC being interacted with currently a companion?
-        if (companions.IsNpcCompanionForFarmer(farmer, npc))
+        if (store.Companions.IsNpcCompanionForFarmer(farmer, npc))
         {
             AskOptions(farmer, npc);
         }
@@ -72,8 +65,7 @@ public class Interactions: IStore
                     return;
                 }
                 
-                Companions companions = store.UseCompanions();
-                companions.Add(farmer, npc);
+                store.Companions.Add(farmer, npc);
             }, 
             npc);
     }
@@ -96,8 +88,7 @@ public class Interactions: IStore
                     return;
                 }
                 
-                Companions companions = store.UseCompanions();
-                companions.Remove(farmer, npc);
+                store.Companions.Remove(farmer, npc);
             }, 
             npc);
     }

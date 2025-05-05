@@ -8,10 +8,7 @@ using StardewValley;
 #region Store Setup
 public partial class Store
 {
-    public Companions UseCompanions()
-    {
-        return DefineStore<Companions>();
-    }
+    public Companions Companions => DefineStore<Companions>();
 }
 #endregion
 
@@ -19,10 +16,8 @@ public partial class Store
 /// Holds functions for creating and removing companions as well as some utility functions for determining if npcs are
 /// valid companions. Also handles creating and removing Leader and Companion classes automatically
 /// </summary>
-public class Companions: IStore
+public class Companions: StoreBase
 {
-    public required Store store { get; set; }
-    
     /****
      ** Config
      ****/
@@ -51,20 +46,18 @@ public class Companions: IStore
     /// </summary>
     public void Add(Farmer farmer, NPC npc)
     {
-        IMonitor monitor = store.UseMonitor();
-
         // Early Exit: Check if NPC is already a companion
         if (IsNpcCompanion(npc, out Farmer? currentFarmer))
         {
             // Companion existingCompanion = GetCompanion(npc)!;
-            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion for {currentFarmer!.Name}!", LogLevel.Trace);
+            store.Monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion for {currentFarmer!.Name}!", LogLevel.Trace);
             return;
         }
         
         // Early Exit: Check if NPC can be a companion for this farmer
         if (!IsNpcValidCompanionForFarmer(npc, farmer))
         {
-            monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is not a valid companion for {farmer.Name}!", LogLevel.Trace);
+            store.Monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is not a valid companion for {farmer.Name}!", LogLevel.Trace);
             return;
         }
 
@@ -82,13 +75,11 @@ public class Companions: IStore
     /// </summary>
     public void Remove(Farmer farmer, NPC npc)
     {
-        IMonitor monitor = store.UseMonitor();
-
         Leader? leader = GetLeader(farmer);
 
         if (leader == null)
         {
-            monitor.Log($"Could not remove {npc.Name} as a companion. {farmer.Name} is not currently a leader!", LogLevel.Trace);
+            store.Monitor.Log($"Could not remove {npc.Name} as a companion. {farmer.Name} is not currently a leader!", LogLevel.Trace);
             return;
         }
         
@@ -139,8 +130,7 @@ public class Companions: IStore
     {
         if (_returningCompanions.ContainsKey(returningCompanion.npc))
         {
-            IMonitor monitor = store.UseMonitor();
-            monitor.Log($"Attempted to add returning companion {returningCompanion.npc.Name} but {returningCompanion.npc.Name} is already a returning companion!", LogLevel.Warn);
+            store.Monitor.Log($"Attempted to add returning companion {returningCompanion.npc.Name} but {returningCompanion.npc.Name} is already a returning companion!", LogLevel.Warn);
             return;
         }
         
@@ -173,25 +163,21 @@ public class Companions: IStore
 
     public bool IsNpcValidCompanion(NPC npc)
     {
-        IMonitor monitor = store.UseMonitor();
-        
-        monitor.Log($"Checking if {npc.Name} can be a valid companion.", LogLevel.Trace);
+        store.Monitor.Log($"Checking if {npc.Name} can be a valid companion.", LogLevel.Trace);
 
         if (_validCompanions.Contains(npc.Name))
         {
-            monitor.Log($"{npc.Name} can be a companion.", LogLevel.Trace);
+            store.Monitor.Log($"{npc.Name} can be a companion.", LogLevel.Trace);
             return true;
         }
         
-        monitor.Log($"{npc.Name} can not be a companion.", LogLevel.Trace);
+        store.Monitor.Log($"{npc.Name} can not be a companion.", LogLevel.Trace);
         return false;
     }
 
     public bool IsNpcValidCompanionForFarmer(NPC npc, Farmer farmer)
     {
-        IMonitor monitor = store.UseMonitor();
-        
-        monitor.Log($"Checking if {npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
+        store.Monitor.Log($"Checking if {npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
         // Early Exit: If NPC can't be a companion return
         if (!IsNpcValidCompanion(npc))
             return false;
@@ -199,7 +185,7 @@ public class Companions: IStore
         // Get the heart level of the farmer and this npc
         if (!_companionHeartsThreshold.TryGetValue(npc.Name, out int companionHearts))
         {
-            monitor.Log($"Could not get heart level requirement for {npc.Name}!", LogLevel.Trace);
+            store.Monitor.Log($"Could not get heart level requirement for {npc.Name}!", LogLevel.Trace);
             return false;
         }
         var hearts = Util.GetHeartLevel(farmer, npc);
@@ -207,11 +193,11 @@ public class Companions: IStore
         // Return true if number of hearts is equal to or above heart threshold
         if (hearts >= companionHearts)
         {
-            monitor.Log($"{npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
+            store.Monitor.Log($"{npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
             return true;
         }
         
-        monitor.Log($"{npc.Name} is not a valid companion for {farmer.Name}.", LogLevel.Trace);
+        store.Monitor.Log($"{npc.Name} is not a valid companion for {farmer.Name}.", LogLevel.Trace);
         return false;
 
     }

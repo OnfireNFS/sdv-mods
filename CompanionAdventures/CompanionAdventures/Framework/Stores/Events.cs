@@ -9,10 +9,7 @@ namespace CompanionAdventures.Framework;
 #region Store Setup
 public partial class Store
 {
-    public Events UseEvents()
-    {
-        return DefineStore<Events>();
-    }
+    public Events Events => DefineStore<Events>();
 }
 #endregion
 
@@ -21,20 +18,15 @@ public partial class Store
 ///
 /// For example: handling controller input or loading assets
 /// </summary>
-public class Events: IStore
+public class Events: StoreBase
 {
-    public required Store store { get; set; }
-    
     /****
      ** Events
      ****/
     public void RegisterEvents()
     {
-        IModHelper helper = store.UseHelper();
-        IModEvents events = helper.Events;
-        
-        events.GameLoop.GameLaunched += OnGameLaunched;
-        events.Input.ButtonPressed += OnButtonPressed;
+        store.Helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+        store.Helper.Events.Input.ButtonPressed += OnButtonPressed;
     }
     
     /// <summary>
@@ -75,19 +67,15 @@ public class Events: IStore
             }
             
             // Suppress default behavior 
-            IModHelper helper = store.UseHelper();
-            helper.Input.Suppress(e.Button);
+            store.Helper.Input.Suppress(e.Button);
             
             // Use the interactions store to handle interacting with this NPC
-            Interactions interactions = store.UseInteractions();
-            interactions.HandleInteraction(farmer, npc);
+            store.Interactions.HandleInteraction(farmer, npc);
         }
     }
     
     private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
     {
-        IModHelper helper = store.UseHelper();
-        
-        var api = helper.ModRegistry.GetApi<IContentPack>("Pathoschild.ContentPatcher");
+        var api = store.Helper.ModRegistry.GetApi<IContentPack>("Pathoschild.ContentPatcher");
     }
 }

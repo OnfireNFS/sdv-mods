@@ -41,8 +41,7 @@ public class ReturningCompanion
         _defaultTile = defaultTile;
         _warp = warp;
         
-        IMonitor monitor = store.UseMonitor();
-        monitor.Log($"Creating ReturningCompanion instance for {npc.Name}");
+        store.Monitor.Log($"Creating ReturningCompanion instance for {npc.Name}");
 
         LoadNewSchedule(scheduleToFollow);
         RegisterEvents();
@@ -59,8 +58,6 @@ public class ReturningCompanion
     /// </returns>
     public static ReturningCompanion? CreateReturningCompanionOrWarp(Store store, NPC npc)
     {
-        IMonitor monitor = store.UseMonitor();
-        
         // Try to load the npc's schedule for today
         npc.ignoreScheduleToday = false;
         npc.TryLoadSchedule();
@@ -88,19 +85,19 @@ public class ReturningCompanion
         // Were we able to make a valid path from the current location to where the npc should be?
         if (returnToSchedule.route != null)
         {
-            monitor.Log($"Created route for {npc.Name} from {npc.currentLocation.Name} to {returnToSchedule.targetLocationName}");
+            store.Monitor.Log($"Created route for {npc.Name} from {npc.currentLocation.Name} to {returnToSchedule.targetLocationName}");
             
             return new ReturningCompanion(store, npc, returnToSchedule, defaultLocation, defaultTile);
         }
         
-        monitor.Log($"Could not find route for {npc.Name} from {npc.currentLocation.Name} to {returnToSchedule.targetLocationName}");
+        store.Monitor.Log($"Could not find route for {npc.Name} from {npc.currentLocation.Name} to {returnToSchedule.targetLocationName}");
         // Attempt to find an exit from this location
         Warp? warp = npc.currentLocation.warps.FirstOrDefault<Warp>();
         
         // We couldn't find a path out of this location, just Warp to next location (¯\_(ツ)_/¯ we tried)
         if (warp == null)
         {
-            monitor.Log($"Could not find exit from {npc.currentLocation.Name} for {npc.Name}. Warping...");
+            store.Monitor.Log($"Could not find exit from {npc.currentLocation.Name} for {npc.Name}. Warping...");
             Game1.warpCharacter(
                 npc, 
                 previousSchedule?.targetLocationName ?? defaultLocation,
@@ -131,7 +128,7 @@ public class ReturningCompanion
             return new ReturningCompanion(store, npc, returnToWarp, defaultLocation, defaultTile, true);
         
         // If a valid path to the warp could not be created warp to default location
-        monitor.Log($"Could not create path to exit from {npc.currentLocation.Name} for {npc.Name}. Warping...");
+        store.Monitor.Log($"Could not create path to exit from {npc.currentLocation.Name} for {npc.Name}. Warping...");
         Game1.warpCharacter(
             npc, 
             previousSchedule?.targetLocationName ?? defaultLocation,
@@ -152,20 +149,16 @@ public class ReturningCompanion
     /// </summary>
     public void Cancel()
     {
-        IMonitor monitor = store.UseMonitor();
-        monitor.Log($"Cancelling ReturningCompanion instance for {npc.Name}");
+        store.Monitor.Log($"Cancelling ReturningCompanion instance for {npc.Name}");
         
-        Companions companions = store.UseCompanions();
-        companions.RemoveReturningCompanion(npc);
+        store.Companions.RemoveReturningCompanion(npc);
     }
 
     private void Complete()
     {
-        IMonitor monitor = store.UseMonitor();
-        monitor.Log($"Completed ReturningCompanion instance for {npc.Name}");
+        store.Monitor.Log($"Completed ReturningCompanion instance for {npc.Name}");
         
-        Companions companions = store.UseCompanions();
-        companions.RemoveReturningCompanion(npc);
+        store.Companions.RemoveReturningCompanion(npc);
     }
 
     private static SchedulePathDescription? GetPreviousSchedule(NPC npc)
@@ -237,8 +230,7 @@ public class ReturningCompanion
         if ( previousSchedule == null || npc.controller != null) 
             return;
         
-        IMonitor monitor = store.UseMonitor();
-        monitor.Log("NPC Controller was null and previous schedule was not null, attempting to change direction and end behavior");
+        store.Monitor.Log("NPC Controller was null and previous schedule was not null, attempting to change direction and end behavior");
         npc.controller =
             new PathFindController(npc, npc.currentLocation, npc.TilePoint, previousSchedule.facingDirection);
         npc.StartActivityRouteEndBehavior(previousSchedule.endOfRouteBehavior, previousSchedule.endOfRouteMessage);
@@ -267,29 +259,23 @@ public class ReturningCompanion
     
     private void RegisterEvents()
     {
-        IModHelper helper = store.UseHelper();
-        IMonitor monitor = store.UseMonitor();
-        
-        monitor.Log($"Registering events for ReturningCompanion {npc.Name}");
-        helper.Events.GameLoop.OneSecondUpdateTicking += OnOneSecondUpdateTicking;
+        store.Monitor.Log($"Registering events for ReturningCompanion {npc.Name}");
+        store.Helper.Events.GameLoop.OneSecondUpdateTicking += OnOneSecondUpdateTicking;
 
         // If this companion isn't warping out of this location, add an event handler for updating their path when the
         // time changes, this can be useful if they were originally supposed to path to their 900 location when they
         // left but walking took so long they should now be pathing to their 1000 location
         if (!_warp)
         {
-            helper.Events.GameLoop.TimeChanged += OnTimeChanged;
+            store.Helper.Events.GameLoop.TimeChanged += OnTimeChanged;
         }
     }
     
     private void UnregisterEvents()
     {
-        IModHelper helper = store.UseHelper();
-        IMonitor monitor = store.UseMonitor();
-        
-        monitor.Log($"Unregistering events for ReturningCompanion {npc.Name}");
-        helper.Events.GameLoop.TimeChanged -= OnTimeChanged;
-        helper.Events.GameLoop.OneSecondUpdateTicking -= OnOneSecondUpdateTicking;
+        store.Monitor.Log($"Unregistering events for ReturningCompanion {npc.Name}");
+        store.Helper.Events.GameLoop.TimeChanged -= OnTimeChanged;
+        store.Helper.Events.GameLoop.OneSecondUpdateTicking -= OnOneSecondUpdateTicking;
     }
 
     private void OnOneSecondUpdateTicking(object? sender, OneSecondUpdateTickingEventArgs e)
@@ -298,9 +284,8 @@ public class ReturningCompanion
         // Then it has reached its destination, remove this ReturningCompanion instance
         if (!_warp && (int) npc.Tile.X == _currentSchedule.targetTile.X && (int) npc.Tile.Y == _currentSchedule.targetTile.Y)
         {
-            IMonitor monitor = store.UseMonitor();
-            monitor.Log($"{npc.Name} has made it to destination tile!");
-            store.UseCompanions().RemoveReturningCompanion(npc);
+            store.Monitor.Log($"{npc.Name} has made it to destination tile!");
+            store.Companions.RemoveReturningCompanion(npc);
         }
 
         if (_warp)
@@ -310,9 +295,8 @@ public class ReturningCompanion
             if (_currentSchedule.targetLocationName == npc.currentLocation.Name)
                 return;
         
-            IMonitor monitor = store.UseMonitor();
-            monitor.Log($"{npc.Name} has made it to destination warp!");
-            monitor.Log($"Warping {npc.Name} to correct location and tile");
+            store.Monitor.Log($"{npc.Name} has made it to destination warp!");
+            store.Monitor.Log($"Warping {npc.Name} to correct location and tile");
         
             SchedulePathDescription? previousSchedule = GetPreviousSchedule(npc);
         
@@ -322,7 +306,7 @@ public class ReturningCompanion
                 previousSchedule?.targetTile ?? _defaultTile
             );
         
-            store.UseCompanions().RemoveReturningCompanion(npc);
+            store.Companions.RemoveReturningCompanion(npc);
         }
     }
     
@@ -333,8 +317,7 @@ public class ReturningCompanion
         if (_npcSchedule == null || !_npcSchedule.TryGetValue(e.NewTime, out SchedulePathDescription? schedule)) 
             return;
         
-        IMonitor monitor = store.UseMonitor();
-        monitor.Log($"New schedule for {npc.Name} found at {e.NewTime}");
+        store.Monitor.Log($"New schedule for {npc.Name} found at {e.NewTime}");
         // Generate a new route from the npcs current location to wherever they should currently be according to
         // the new schedule
         SchedulePathDescription returnToSchedule = npc.pathfindToNextScheduleLocation(
@@ -354,7 +337,7 @@ public class ReturningCompanion
         if (returnToSchedule.route == null) 
             return;
         
-        monitor.Log($"Updating {npc.Name}'s return path to end at {e.NewTime} schedule destination");
+        store.Monitor.Log($"Updating {npc.Name}'s return path to end at {e.NewTime} schedule destination");
         // Update the schedule the npc uses to determine if it has reached its destination to be this schedule
         _currentSchedule = returnToSchedule;
         
@@ -363,8 +346,7 @@ public class ReturningCompanion
 
     public void Remove()
     {
-        IMonitor monitor = store.UseMonitor();
-        monitor.Log($"Removing ReturningCompanion instance for {npc.Name}");
+        store.Monitor.Log($"Removing ReturningCompanion instance for {npc.Name}");
         
         UnregisterEvents();
         

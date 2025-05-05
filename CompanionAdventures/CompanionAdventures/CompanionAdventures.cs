@@ -21,8 +21,7 @@ namespace CompanionAdventures
             Store store = new Store(this);
             
             // Hook events
-            Events events = store.UseEvents();
-            events.RegisterEvents();
+            store.Events.RegisterEvents();
         }
     }
 }

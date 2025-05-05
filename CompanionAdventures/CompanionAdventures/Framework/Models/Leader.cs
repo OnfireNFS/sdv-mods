@@ -27,8 +27,7 @@ public class Leader
         this.store = store;
         this.Farmer = farmer;
         
-        IMonitor monitor = store.UseMonitor();
-        monitor.Log($"Creating Leader instance for {farmer.Name}");
+        store.Monitor.Log($"Creating Leader instance for {farmer.Name}");
         
         Tile = new BehaviorSubject<Vector2>(farmer.Tile);
         Location = new BehaviorSubject<GameLocation>(farmer.currentLocation);
@@ -38,31 +37,26 @@ public class Leader
 
     public void AddCompanion(NPC npc)
     {
-        ModConfig config = store.UseConfig();
-        IMonitor monitor = store.UseMonitor();
-        
         // Early Exit: If farmer has more than or equal to maximum number of companions
-        if (Companions.Count >= config.MaxCompanions)
+        if (Companions.Count >= store.Config.MaxCompanions)
         {
-            monitor.Log($"Could not add {npc.Name} as a companion to {Farmer.Name}. {Farmer.Name} already has the maximum number of companions!", LogLevel.Trace);
+            store.Monitor.Log($"Could not add {npc.Name} as a companion to {Farmer.Name}. {Farmer.Name} already has the maximum number of companions!", LogLevel.Trace);
             return;
         }
         
         Companion companion = new Companion(store, npc, this);
         Companions.Add(companion);
         
-        monitor.Log($"Successfully added {companion.npc.Name} as a companion to {Farmer.Name}.", LogLevel.Trace);
+        store.Monitor.Log($"Successfully added {companion.npc.Name} as a companion to {Farmer.Name}.", LogLevel.Trace);
     }
     
     public void RemoveCompanion(NPC npc)
     {
-        IMonitor monitor = store.UseMonitor();
-        
         Companion? companion = Companions.Find(companion => companion.npc == npc);
         
         if (companion == null)
         {
-            monitor.Log($"Could not remove {npc.Name} as a companion. {npc.Name} is not a companion of {Farmer.Name}!", LogLevel.Trace);
+            store.Monitor.Log($"Could not remove {npc.Name} as a companion. {npc.Name} is not a companion of {Farmer.Name}!", LogLevel.Trace);
             return;
         }
         
@@ -114,22 +108,16 @@ public class Leader
      ****/
     private void RegisterEvents()
     {
-        IModHelper helper = store.UseHelper();
-        IMonitor monitor = store.UseMonitor();
-        
-        monitor.Log($"Registering events for Leader {Farmer.Name}");
-        helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
-        helper.Events.Player.Warped += OnPlayerWarped;
+        store.Monitor.Log($"Registering events for Leader {Farmer.Name}");
+        store.Helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
+        store.Helper.Events.Player.Warped += OnPlayerWarped;
     }
 
     private void UnregisterEvents()
     {
-        IModHelper helper = store.UseHelper();
-        IMonitor monitor = store.UseMonitor();
-        
-        monitor.Log($"Unregistering events for Leader {Farmer.Name}");
-        helper.Events.GameLoop.UpdateTicking -= OnUpdateTicking;
-        helper.Events.Player.Warped -= OnPlayerWarped;
+        store.Monitor.Log($"Unregistering events for Leader {Farmer.Name}");
+        store.Helper.Events.GameLoop.UpdateTicking -= OnUpdateTicking;
+        store.Helper.Events.Player.Warped -= OnPlayerWarped;
     }
     
     private void OnPlayerWarped(object? sender, WarpedEventArgs e)
@@ -149,8 +137,7 @@ public class Leader
     
     public void Remove()
     {
-        IMonitor monitor = store.UseMonitor();
-        monitor.Log($"Removing Leader instance for {Farmer.Name}");
+        store.Monitor.Log($"Removing Leader instance for {Farmer.Name}");
         
         foreach (Companion companion in Companions)
         {
