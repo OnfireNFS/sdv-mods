@@ -43,21 +43,8 @@ public class ReturningCompanion
         
         IMonitor monitor = store.UseMonitor();
         monitor.Log($"Creating ReturningCompanion instance for {npc.Name}");
-        
-        // We don't need to clear the schedule here, but it reduces the likeliness of other entries interfering
-        // with the return path schedule
-        npc.Schedule?.Clear();
-        // Add the newly created return schedule to the npc's daily schedule
-        npc.Schedule?.Add(Game1.timeOfDay, scheduleToFollow);
-        
-        // The last attempted schedule could've been the same tick as the current time of day
-        // Set the last attempted check time to be 10 minutes before that so that the newly added
-        // schedule will always be run immediately
-        npc.lastAttemptedSchedule -= 10;
-        
-        // Run check schedule to run the return to location schedule
-        npc.checkSchedule(Game1.timeOfDay);
-        
+
+        LoadNewSchedule(scheduleToFollow);
         RegisterEvents();
     }
 
@@ -180,14 +167,6 @@ public class ReturningCompanion
         Companions companions = store.UseCompanions();
         companions.RemoveReturningCompanion(npc);
     }
-    
-    private void UpdateRoute()
-    {
-        // TODO: Get schedule
-        //  check if new entry exists for time
-        //  if entry doesn't exist -> return
-        //  if entry does exist, update schedule then execute new path
-    }
 
     private static SchedulePathDescription? GetPreviousSchedule(NPC npc)
     {
@@ -264,6 +243,27 @@ public class ReturningCompanion
             new PathFindController(npc, npc.currentLocation, npc.TilePoint, previousSchedule.facingDirection);
         npc.StartActivityRouteEndBehavior(previousSchedule.endOfRouteBehavior, previousSchedule.endOfRouteMessage);
     }
+
+    private void LoadNewSchedule(SchedulePathDescription newSchedule)
+    {
+        // Stop current pathing
+        npc.controller = null;
+        npc.temporaryController = null;
+        npc.isMovingOnPathFindPath.Value = false;
+        
+        // Remove any other entries from the NPCs schedule
+        npc.ClearSchedule();
+        // Add the newly created return schedule to the npc's daily schedule
+        npc.TryLoadSchedule(Game1.timeOfDay.ToString(), new Dictionary<int, SchedulePathDescription>(){{ Game1.timeOfDay, newSchedule}});
+        
+        // The last attempted schedule could've been the same tick as the current time of day
+        // Set the last attempted check time to be 10 minutes before that so that the newly added
+        // schedule will always be run immediately
+        npc.lastAttemptedSchedule = Game1.timeOfDay - 10;
+        
+        // Run check schedule to run the return to location schedule
+        npc.checkSchedule(Game1.timeOfDay);
+    }
     
     private void RegisterEvents()
     {
@@ -271,8 +271,15 @@ public class ReturningCompanion
         IMonitor monitor = store.UseMonitor();
         
         monitor.Log($"Registering events for ReturningCompanion {npc.Name}");
-        helper.Events.GameLoop.TimeChanged += OnTimeChanged;
         helper.Events.GameLoop.OneSecondUpdateTicking += OnOneSecondUpdateTicking;
+
+        // If this companion isn't warping out of this location, add an event handler for updating their path when the
+        // time changes, this can be useful if they were originally supposed to path to their 900 location when they
+        // left but walking took so long they should now be pathing to their 1000 location
+        if (!_warp)
+        {
+            helper.Events.GameLoop.TimeChanged += OnTimeChanged;
+        }
     }
     
     private void UnregisterEvents()
@@ -321,9 +328,37 @@ public class ReturningCompanion
     
     private void OnTimeChanged(object? sender, TimeChangedEventArgs e)
     {
-        // npc.Schedule.TryGetValue();
-        // Check if the NPC that is currently returning should be pathing to a new location
-        // If so update pathing
+        // Early Exit: If the stored npc schedule is null, or we couldn't get a new schedule for the current time,
+        // then do nothing
+        if (_npcSchedule == null || !_npcSchedule.TryGetValue(e.NewTime, out SchedulePathDescription? schedule)) 
+            return;
+        
+        IMonitor monitor = store.UseMonitor();
+        monitor.Log($"New schedule for {npc.Name} found at {e.NewTime}");
+        // Generate a new route from the npcs current location to wherever they should currently be according to
+        // the new schedule
+        SchedulePathDescription returnToSchedule = npc.pathfindToNextScheduleLocation(
+            npc.ScheduleKey, // This is only used to show error messages
+            npc.currentLocation.Name,
+            (int) npc.Tile.X,
+            (int) npc.Tile.Y,
+            schedule.targetLocationName,
+            schedule.targetTile.X,
+            schedule.targetTile.Y,
+            schedule.facingDirection,
+            schedule.endOfRouteBehavior,
+            schedule.endOfRouteMessage
+        );
+
+        // Early Exit: If the newly created schedules route is null, do nothing.
+        if (returnToSchedule.route == null) 
+            return;
+        
+        monitor.Log($"Updating {npc.Name}'s return path to end at {e.NewTime} schedule destination");
+        // Update the schedule the npc uses to determine if it has reached its destination to be this schedule
+        _currentSchedule = returnToSchedule;
+        
+        LoadNewSchedule(returnToSchedule);
     }
 
     public void Remove()
