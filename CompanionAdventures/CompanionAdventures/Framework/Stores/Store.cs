@@ -11,6 +11,12 @@ namespace CompanionAdventures.Framework;
 /// a store can be instantiated. This allows for multiple instances of a store to exist, each with a single instance of
 /// their resources. Store patterns are common for managing app state in front-end frameworks such as Vue and React.
 /// This store design is inspired by Pinia.
+///
+/// Why not just use static classes?
+/// I considered this but because most of the "stores" require access to "mod" properties like Monitor and Helper which
+/// aren't static it made accessing them from static classes kinda weird. It would rely on calling MyStore.SetMonitor
+/// or something in a static context and there is no guarantee that function was called before attempting to access
+/// Monitor. This way if the store is instantiated we know we have access to instance variables like Monitor and Helper.
 /// </summary>
 /// <param name="mod"></param>
 public partial class Store(CompanionAdventures mod)
