@@ -8,7 +8,7 @@ namespace CompanionAdventures.Framework.Models;
 /// <summary>
 /// Class responsible for holding and managing the state of a single companion
 /// </summary>
-public class Companion: IDisposable
+public class Companion
 {
     private readonly Store store;
     public NPC npc;
@@ -82,7 +82,7 @@ public class Companion: IDisposable
         // Calculate new position for this npc or something?
     }
     
-    public void Dispose()
+    public void Remove()
     {
         IMonitor monitor = store.UseMonitor();
         monitor.Log($"Removing Companion instance for {npc.Name}");

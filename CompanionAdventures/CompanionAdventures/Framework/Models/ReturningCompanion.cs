@@ -12,7 +12,7 @@ namespace CompanionAdventures.Framework.Models;
 /// <summary>
 /// Class responsible for holding and managing the state of a companion that is returning from an adventure
 /// </summary>
-public class ReturningCompanion: IDisposable
+public class ReturningCompanion
 {
     private readonly Store store;
     public NPC npc;
@@ -294,7 +294,7 @@ public class ReturningCompanion: IDisposable
         // If so update pathing
     }
 
-    public void Dispose()
+    public void Remove()
     {
         IMonitor monitor = store.UseMonitor();
         monitor.Log($"Removing ReturningCompanion instance for {npc.Name}");

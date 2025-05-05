@@ -12,7 +12,7 @@ namespace CompanionAdventures.Framework.Models;
 /// Uses reactive to signal subscribes of events/updates
 /// </summary>
 /// <param name="npc"></param>
-public class Leader: IDisposable
+public class Leader
 {
     private readonly Store store;
     
@@ -67,7 +67,7 @@ public class Leader: IDisposable
         }
         
         Companions.Remove(companion);
-        companion.Dispose();
+        companion.Remove();
     }
 
     public bool IsCompanion(NPC npc)
@@ -147,14 +147,14 @@ public class Leader: IDisposable
         UpdateTile();
     }
     
-    public void Dispose()
+    public void Remove()
     {
         IMonitor monitor = store.UseMonitor();
         monitor.Log($"Removing Leader instance for {Farmer.Name}");
         
         foreach (Companion companion in Companions)
         {
-            companion.Dispose();
+            companion.Remove();
         }
         
         UnregisterEvents();

@@ -124,7 +124,7 @@ public class Companions: IStore
             return;
         
         _leaders.Remove(farmer);
-        leader.Dispose();
+        leader.Remove();
     }
 
     public void AddReturningCompanion(NPC npc)
@@ -156,7 +156,7 @@ public class Companions: IStore
             return;
         
         _returningCompanions.Remove(npc);
-        returningCompanion.Dispose();
+        returningCompanion.Remove();
     }
     
     /****
