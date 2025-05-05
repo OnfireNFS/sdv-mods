@@ -47,6 +47,27 @@ public class ReturningCompanion
         RegisterEvents();
     }
 
+    private void LoadNewSchedule(SchedulePathDescription newSchedule)
+    {
+        // Stop current pathing
+        npc.controller = null;
+        npc.temporaryController = null;
+        npc.isMovingOnPathFindPath.Value = false;
+        
+        // Remove any other entries from the NPCs schedule
+        npc.ClearSchedule();
+        // Add the newly created return schedule to the npc's daily schedule
+        npc.TryLoadSchedule(Game1.timeOfDay.ToString(), new Dictionary<int, SchedulePathDescription>(){{ Game1.timeOfDay, newSchedule}});
+        
+        // The last attempted schedule could've been the same tick as the current time of day
+        // Set the last attempted check time to be 10 minutes before that so that the newly added
+        // schedule will always be run immediately
+        npc.lastAttemptedSchedule = Game1.timeOfDay - 10;
+        
+        // Run check schedule to run the return to location schedule
+        npc.checkSchedule(Game1.timeOfDay);
+    }
+    
     /// <summary>
     /// Checks if the provided NPC can find a path from their current location to the location they should be at
     /// according to their schedule, if not it instead checks if the current NPC can find a warp to leave their current
@@ -140,27 +161,6 @@ public class ReturningCompanion
         return null;
     }
     
-    /// <summary>
-    /// Stop returning route and unregister this NPC as being a ReturningCompanion
-    /// 
-    /// (Useful when adding a NPC as a companion but that NPC is currently returning)
-    /// Example: Player 1 had Abigail as companion, Player 1 dismisses Abigail, Abigail becomes a ReturningCompanion,
-    /// before Abigail reaches her destination Player 2 asks Abigail to be a companion.
-    /// </summary>
-    public void Cancel()
-    {
-        store.Monitor.Log($"Cancelling ReturningCompanion instance for {npc.Name}");
-        
-        store.Companions.RemoveReturningCompanion(npc);
-    }
-
-    private void Complete()
-    {
-        store.Monitor.Log($"Completed ReturningCompanion instance for {npc.Name}");
-        
-        store.Companions.RemoveReturningCompanion(npc);
-    }
-
     private static SchedulePathDescription? GetPreviousSchedule(NPC npc)
     {
         // Early Exit: If npc Schedule is null than there can't be a previous schedule, return null
@@ -235,28 +235,10 @@ public class ReturningCompanion
             new PathFindController(npc, npc.currentLocation, npc.TilePoint, previousSchedule.facingDirection);
         npc.StartActivityRouteEndBehavior(previousSchedule.endOfRouteBehavior, previousSchedule.endOfRouteMessage);
     }
-
-    private void LoadNewSchedule(SchedulePathDescription newSchedule)
-    {
-        // Stop current pathing
-        npc.controller = null;
-        npc.temporaryController = null;
-        npc.isMovingOnPathFindPath.Value = false;
-        
-        // Remove any other entries from the NPCs schedule
-        npc.ClearSchedule();
-        // Add the newly created return schedule to the npc's daily schedule
-        npc.TryLoadSchedule(Game1.timeOfDay.ToString(), new Dictionary<int, SchedulePathDescription>(){{ Game1.timeOfDay, newSchedule}});
-        
-        // The last attempted schedule could've been the same tick as the current time of day
-        // Set the last attempted check time to be 10 minutes before that so that the newly added
-        // schedule will always be run immediately
-        npc.lastAttemptedSchedule = Game1.timeOfDay - 10;
-        
-        // Run check schedule to run the return to location schedule
-        npc.checkSchedule(Game1.timeOfDay);
-    }
     
+    /****
+     ** Events
+     ****/
     private void RegisterEvents()
     {
         store.Monitor.Log($"Registering events for ReturningCompanion {npc.Name}");
