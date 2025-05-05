@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using StardewValley.Pathfinding;
 
 namespace CompanionAdventures.Framework.Models;
 
@@ -87,11 +88,8 @@ public class Companion
         IMonitor monitor = store.UseMonitor();
         monitor.Log($"Removing Companion instance for {npc.Name}");
         
+        // Remove reactive listeners
         leaderTile.Dispose();
         leaderLocation.Dispose();
-        
-        // Convert this companion into a returning companion
-        Companions companions = store.UseCompanions();
-        companions.AddReturningCompanion(npc);
     }
 }

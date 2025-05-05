@@ -98,6 +98,14 @@ public class Companions: IStore
         {
             RemoveLeader(farmer);
         }
+        
+        // Try to path this companion to its previous schedule location or warp it there
+        ReturningCompanion? returningCompanion = ReturningCompanion.CreateReturningCompanionOrWarp(store, npc);
+        
+        // If we were able to generate a path to this companion's previous schedule location then store it as a 
+        // returning companion
+        if (returningCompanion != null)
+            AddReturningCompanion(returningCompanion);
     }
 
     private Leader CreateLeader(Farmer farmer)
@@ -127,16 +135,16 @@ public class Companions: IStore
         leader.Remove();
     }
 
-    public void AddReturningCompanion(NPC npc)
+    public void AddReturningCompanion(ReturningCompanion returningCompanion)
     {
-        if (_returningCompanions.ContainsKey(npc))
+        if (_returningCompanions.ContainsKey(returningCompanion.npc))
         {
             IMonitor monitor = store.UseMonitor();
-            monitor.Log($"Attempted to add returning companion {npc.Name} but {npc.Name} is already a returning companion!", LogLevel.Warn);
+            monitor.Log($"Attempted to add returning companion {returningCompanion.npc.Name} but {returningCompanion.npc.Name} is already a returning companion!", LogLevel.Warn);
             return;
         }
         
-        _returningCompanions.Add(npc, new ReturningCompanion(store, npc));
+        _returningCompanions.Add(returningCompanion.npc, returningCompanion);
     }
 
     private ReturningCompanion? GetReturningCompanion(NPC npc)
