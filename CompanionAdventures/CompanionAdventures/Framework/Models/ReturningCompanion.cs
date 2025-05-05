@@ -21,7 +21,6 @@ public class ReturningCompanion: IDisposable
     private SchedulePathDescription? _currentScheduleEntry;
     private Point _defaultTile;
     private string _defaultLocation = null!;
-    private bool _warp;
     
     public ReturningCompanion(Store store, NPC npc)
     {
@@ -32,7 +31,6 @@ public class ReturningCompanion: IDisposable
         monitor.Log($"Creating ReturningCompanion instance for {npc.Name}");
         
         CreateRoute();
-        RegisterEvents();
     }
     
     /// <summary>
@@ -149,44 +147,52 @@ public class ReturningCompanion: IDisposable
         else
         {
             monitor.Log($"Could not find route for {npc.Name} from {npc.currentLocation.Name} to {returnToSchedule.targetLocationName}");
-            // If we couldn't generate a valid path from the current location to where our npc needs to be
             // Attempt to find an exit from this location
             Warp? warp = npc.currentLocation.warps.FirstOrDefault<Warp>();
             
-            // We found a warp we can path to, leave this location through that warp
-            if (warp != null)
-            {
-                SchedulePathDescription returnToWarp = npc.pathfindToNextScheduleLocation(
-                    npc.ScheduleKey, // This is only used to show error messages
-                    npc.currentLocation.Name,
-                    (int) npc.Tile.X,
-                    (int) npc.Tile.Y,
-                    npc.currentLocation.Name,
-                    warp.X,
-                    warp.Y,
-                    npc.DefaultFacingDirection,
-                    previousSchedule?.endOfRouteBehavior ?? null,
-                    previousSchedule?.endOfRouteMessage ?? null
-                );
-
-                _warp = true;
-                
-                // Save a copy of the current return schedule (we'll use this later to see if we need to update the
-                // schedule)
-                _currentScheduleEntry = returnToWarp;
-                // We don't need to clear the schedule here, but it reduces the likeliness of other entries interfering
-                // with the return path schedule
-                npc.Schedule.Clear();
-                // Add the newly created return schedule to the npc's daily schedule
-                npc.Schedule?.Add(Game1.timeOfDay, returnToWarp);
-            }
             // We couldn't find a path out of this location, just Warp to next location (¯\_(ツ)_/¯ we tried)
-            else
+            // if (warp == null)
+            if (true)
             {
-                
-            }
-            // TODO: Attempt to create a route to the exit of this map, then warp to 
+                monitor.Log($"Could not find exit from {npc.currentLocation.Name} for {npc.Name}. Warping...");
+                Game1.warpCharacter(
+                    npc, 
+                    previousSchedule?.targetLocationName ?? _defaultLocation,
+                    previousSchedule?.targetTile ?? _defaultTile
+                );
             
+                // TODO: This doesn't work because the instance can't destroy itself 
+                Companions companions = store.UseCompanions();
+                companions.RemoveReturningCompanion(npc);
+                return;
+            }
+            
+            // We found a warp we can path to, leave this location through that warp
+            SchedulePathDescription returnToWarp = npc.pathfindToNextScheduleLocation(
+                npc.ScheduleKey, // This is only used to show error messages
+                npc.currentLocation.Name,
+                (int) npc.Tile.X,
+                (int) npc.Tile.Y,
+                npc.currentLocation.Name,
+                warp.X,
+                warp.Y,
+                npc.DefaultFacingDirection,
+                previousSchedule?.endOfRouteBehavior ?? null,
+                previousSchedule?.endOfRouteMessage ?? null
+            );
+
+            // Register event handler to check if npc has pathed to warp location
+            IModHelper helper = store.UseHelper();
+            helper.Events.GameLoop.OneSecondUpdateTicking += OnOneSecondUpdateTicking;
+                
+            // Save a copy of the current return schedule (we'll use this later to see if we need to update the
+            // schedule)
+            _currentScheduleEntry = returnToWarp;
+            // We don't need to clear the schedule here, but it reduces the likeliness of other entries interfering
+            // with the return path schedule
+            npc.Schedule.Clear();
+            // Add the newly created return schedule to the npc's daily schedule
+            npc.Schedule?.Add(Game1.timeOfDay, returnToWarp);
         }
         
         // The last attempted schedule could've been the same tick as the current time of day
@@ -196,6 +202,9 @@ public class ReturningCompanion: IDisposable
         
         // Run check schedule to run the return to location schedule
         npc.checkSchedule(Game1.timeOfDay);
+        
+        // Register events for this returning companion instance
+        RegisterEvents();
         
         // TODO: What if returnToSchedule.route is null? A valid path could not be found between npc's current location
         //  and target location, maybe route towards exit and the warp them?
@@ -221,7 +230,6 @@ public class ReturningCompanion: IDisposable
         
         monitor.Log($"Registering events for ReturningCompanion {npc.Name}");
         helper.Events.GameLoop.TimeChanged += OnTimeChanged;
-        helper.Events.GameLoop.OneSecondUpdateTicking += OnOneSecondUpdateTicking;
     }
     
     private void UnregisterEvents()
@@ -230,53 +238,53 @@ public class ReturningCompanion: IDisposable
         IMonitor monitor = store.UseMonitor();
         
         monitor.Log($"Unregistering events for ReturningCompanion {npc.Name}");
-        helper.Events.GameLoop.OneSecondUpdateTicking -= OnOneSecondUpdateTicking;
         helper.Events.GameLoop.TimeChanged -= OnTimeChanged;
+        helper.Events.GameLoop.OneSecondUpdateTicking -= OnOneSecondUpdateTicking;
     }
 
     private void OnOneSecondUpdateTicking(object? sender, OneSecondUpdateTickingEventArgs e)
     {
-        if (_currentScheduleEntry != null)
+        if (_currentScheduleEntry == null)
         {
-            if (_warp && _currentScheduleEntry.targetLocationName != npc.currentLocation.Name)
-            {
-                IMonitor monitor = store.UseMonitor();
-                monitor.Log($"{npc.Name} has made it to destination warp!");
-                monitor.Log($"Warping {npc.Name} to correct location and tile");
-                
-                // If we need to warp the npc we need to warp them to the starting location of the previous schedule,
-                // not the target location. Which means we need to get the location before the previous schedule
-                int currentTime = Game1.timeOfDay;
-                SchedulePathDescription? previousSchedule = null;
-                
-                // Check all the way to 0 instead of stopping at 600 to see if a zero schedule exists
-                while (currentTime > 0)
-                {
-                    if (_npcSchedule.TryGetValue(currentTime, out SchedulePathDescription? _previousSchedule))
-                    { 
-                        monitor.Log($"Found previous schedule time: {currentTime}");
-                        previousSchedule = _previousSchedule;
-                        break;
-                    }
-            
-                    currentTime -= 10;
-                }
-                
-                Game1.warpCharacter(
-                    npc, 
-                    previousSchedule?.targetLocationName ?? _defaultLocation,
-                    previousSchedule?.targetTile ?? _defaultTile
-                );
-                
-                // Remove NPC controller for returning to warp point
-                // npc.controller = null;
-                // npc.temporaryController = null;
-                // npc.isMovingOnPathFindPath.Value = false;
-                
-                Companions companions = store.UseCompanions();
-                companions.RemoveReturningCompanion(npc);
-            }
+            // Error: Something went wrong, this companion has registered the OnOneSecondUpdateTicking handler but
+            // doesn't currently have a schedule. This means they will never reach their destination. Reset this npc.
+            return;
         }
+
+        // Early Exit: If NPC is currently on the map they started on then they haven't reached the exit of their 
+        // current map, and we shouldn't warp them yet.
+        if (_currentScheduleEntry.targetLocationName == npc.currentLocation.Name)
+            return;
+        
+        IMonitor monitor = store.UseMonitor();
+        monitor.Log($"{npc.Name} has made it to destination warp!");
+        monitor.Log($"Warping {npc.Name} to correct location and tile");
+            
+        // Warp the NPC to the destination of the previous schedule according to the current time
+        int currentTime = Game1.timeOfDay;
+        SchedulePathDescription? previousSchedule = null;
+            
+        // Check all the way to 0 instead of stopping at 600 to see if a zero schedule exists
+        while (currentTime > 0)
+        {
+            if (_npcSchedule.TryGetValue(currentTime, out SchedulePathDescription? _previousSchedule))
+            { 
+                monitor.Log($"Found previous schedule time: {currentTime}");
+                previousSchedule = _previousSchedule;
+                break;
+            }
+        
+            currentTime -= 10;
+        }
+            
+        Game1.warpCharacter(
+            npc, 
+            previousSchedule?.targetLocationName ?? _defaultLocation,
+            previousSchedule?.targetTile ?? _defaultTile
+        );
+            
+        Companions companions = store.UseCompanions();
+        companions.RemoveReturningCompanion(npc);
     }
     
     private void OnTimeChanged(object? sender, TimeChangedEventArgs e)
