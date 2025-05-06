@@ -96,7 +96,11 @@ public class ReturningCompanion
         );
         
         // Were we able to make a valid path from the current location to where the npc should be?
-        if (returnToSchedule.route != null)
+        // If the destination location is the Farm or FarmHouse then consider this route invalid (Pathing gets weird 
+        // around the farm)
+        if (returnToSchedule.route is { Count: > 0 } 
+            && !new List<string>{"Farm", "FarmHouse"}.Contains(returnToSchedule.targetLocationName)
+        )
         {
             store.Monitor.Log($"Created route for {npc.Name} from {npc.currentLocation.Name} to {returnToSchedule.targetLocationName}");
             
@@ -136,8 +140,12 @@ public class ReturningCompanion
             previousSchedule?.endOfRouteMessage ?? null
         );
         
+        // TODO: Future improvement? Custom routing to leave farmhouse for immersion?
+        
         // If a valid path to the warp was found create a new ReturningCompanion to route to it
-        if (returnToWarp.route != null) 
+        if (returnToWarp.route is { Count: > 0 }
+            && !new List<string>{"Farm", "FarmHouse"}.Contains(returnToWarp.targetLocationName)
+        ) 
             return new ReturningCompanion(store, npc, returnToWarp, true);
         
         // If a valid path to the warp could not be created warp to default location
@@ -153,10 +161,12 @@ public class ReturningCompanion
         return null;
     }
     
-    private static SchedulePathDescription? GetPreviousSchedule(NPC npc)
+    private static SchedulePathDescription? GetPreviousSchedule(NPC npc, Dictionary<int, SchedulePathDescription>? schedule = null)
     {
+        schedule ??= npc.Schedule;
+        
         // Early Exit: If npc Schedule is null than there can't be a previous schedule, return null
-        if (npc.Schedule == null || npc.Schedule?.Count == 0)
+        if (schedule == null || schedule.Count == 0)
             return null;
         
         // If the npc's schedule isn't empty, use the current time to check if one of the entries should've happened
@@ -168,9 +178,9 @@ public class ReturningCompanion
         // Check all the way to 0 instead of stopping at 600 to see if a zero schedule exists
         while (currentTime > 0)
         {
-            if (npc.Schedule!.TryGetValue(currentTime, out SchedulePathDescription? schedule))
+            if (schedule!.TryGetValue(currentTime, out SchedulePathDescription? _schedule))
             {
-                previousSchedule = schedule;
+                previousSchedule = _schedule;
                 break;
             }
         
@@ -243,8 +253,13 @@ public class ReturningCompanion
         
             store.Monitor.Log($"{npc.Name} has made it to destination warp!");
             store.Monitor.Log($"Warping {npc.Name} to correct location and tile");
-        
-            SchedulePathDescription? previousSchedule = GetPreviousSchedule(npc);
+            
+            SchedulePathDescription? previousSchedule = null;
+            if (_npcSchedule != null)
+                previousSchedule = GetPreviousSchedule(npc, _npcSchedule);
+            
+            Console.WriteLine($"{previousSchedule?.targetLocationName ?? npc.DefaultMap}");
+            Console.WriteLine($"{previousSchedule?.targetTile ?? new Point((int)npc.DefaultPosition.X / 64, (int)npc.DefaultPosition.Y / 64)}");
         
             Game1.warpCharacter(
                 npc, 
