@@ -19,16 +19,12 @@ public class ReturningCompanion
     
     private Dictionary<int, SchedulePathDescription>? _npcSchedule;
     private SchedulePathDescription _currentSchedule;
-    private string _defaultLocation;
-    private Point _defaultTile;
     private bool _warp;
     
     private ReturningCompanion(
         Store store, 
         NPC npc, 
         SchedulePathDescription scheduleToFollow,
-        string defaultLocation,
-        Point defaultTile,
         bool warp = false
     )
     {
@@ -37,8 +33,6 @@ public class ReturningCompanion
         // Backup the npcs regular schedule by cloning it
         _npcSchedule = npc.Schedule.DeepClone();
         _currentSchedule = scheduleToFollow;
-        _defaultLocation = defaultLocation;
-        _defaultTile = defaultTile;
         _warp = warp;
         
         store.Monitor.Log($"Creating ReturningCompanion instance for {npc.Name}");
@@ -85,8 +79,6 @@ public class ReturningCompanion
 
         // Try to get previous schedule this npc should've followed if they weren't a companion
         SchedulePathDescription? previousSchedule = GetPreviousSchedule(npc);
-        // Get the default location this NPC should be at depending on if they are married or not
-        (string defaultLocation, Point defaultTile) = GetDefaultLocationAndTile(npc);
         
         // Generate a new route from the npcs current location to wherever they should currently be according to their
         // schedule or default location
@@ -95,9 +87,9 @@ public class ReturningCompanion
             npc.currentLocation.Name,
             (int) npc.Tile.X,
             (int) npc.Tile.Y,
-            previousSchedule?.targetLocationName ?? defaultLocation,
-            previousSchedule?.targetTile.X ?? defaultTile.X,
-            previousSchedule?.targetTile.Y ?? defaultTile.Y,
+            previousSchedule?.targetLocationName ?? npc.DefaultMap,
+            previousSchedule?.targetTile.X ?? (int) npc.DefaultPosition.X / 64,
+            previousSchedule?.targetTile.Y ?? (int) npc.DefaultPosition.Y / 64,
             previousSchedule?.facingDirection ?? npc.DefaultFacingDirection,
             previousSchedule?.endOfRouteBehavior ?? null,
             previousSchedule?.endOfRouteMessage ?? null
@@ -108,7 +100,7 @@ public class ReturningCompanion
         {
             store.Monitor.Log($"Created route for {npc.Name} from {npc.currentLocation.Name} to {returnToSchedule.targetLocationName}");
             
-            return new ReturningCompanion(store, npc, returnToSchedule, defaultLocation, defaultTile);
+            return new ReturningCompanion(store, npc, returnToSchedule);
         }
         
         store.Monitor.Log($"Could not find route for {npc.Name} from {npc.currentLocation.Name} to {returnToSchedule.targetLocationName}");
@@ -121,8 +113,8 @@ public class ReturningCompanion
             store.Monitor.Log($"Could not find exit from {npc.currentLocation.Name} for {npc.Name}. Warping...");
             Game1.warpCharacter(
                 npc, 
-                previousSchedule?.targetLocationName ?? defaultLocation,
-                previousSchedule?.targetTile ?? defaultTile
+                previousSchedule?.targetLocationName ?? npc.DefaultMap,
+                previousSchedule?.targetTile ?? new Point((int)npc.DefaultPosition.X / 64, (int)npc.DefaultPosition.Y / 64)
             );
 
             // Return this NPC to whatever it was doing before it was a companion
@@ -146,14 +138,14 @@ public class ReturningCompanion
         
         // If a valid path to the warp was found create a new ReturningCompanion to route to it
         if (returnToWarp.route != null) 
-            return new ReturningCompanion(store, npc, returnToWarp, defaultLocation, defaultTile, true);
+            return new ReturningCompanion(store, npc, returnToWarp, true);
         
         // If a valid path to the warp could not be created warp to default location
         store.Monitor.Log($"Could not create path to exit from {npc.currentLocation.Name} for {npc.Name}. Warping...");
         Game1.warpCharacter(
             npc, 
-            previousSchedule?.targetLocationName ?? defaultLocation,
-            previousSchedule?.targetTile ?? defaultTile
+            previousSchedule?.targetLocationName ?? npc.DefaultMap,
+            previousSchedule?.targetTile ?? new Point((int)npc.DefaultPosition.X / 64, (int)npc.DefaultPosition.Y / 64)
         );
 
         // Return this NPC to whatever it was doing before it was a companion
@@ -186,34 +178,6 @@ public class ReturningCompanion
         }
         
         return previousSchedule;
-    }
-
-    private static (string, Point) GetDefaultLocationAndTile(NPC npc)
-    {
-        string? defaultLocation = npc.DefaultMap;
-        Point defaultTile = new Point((int)npc.DefaultPosition.X / 64, (int)npc.DefaultPosition.Y / 64);
-        
-        // Early Exit: If NPC isn't married return default location and tile
-        if (!npc.isMarried())
-            return (defaultLocation, defaultTile);
-        
-        Farmer? spouse = npc.getSpouse();
-
-        // Early Exit: If we couldn't get the npcs spouse, return default location and tile
-        if (spouse == null)
-            return (defaultLocation, defaultTile);
-        
-        GameLocation? farm = Game1.getLocationFromName(spouse.homeLocation.Value);
-        
-        switch (farm)
-        {
-            // If the location returned can be cast to a FarmHouse, get where this NPC should spawn in the farmhouse
-            case FarmHouse farmHouse:
-                return (spouse.homeLocation.Value, farmHouse.getSpouseBedSpot(npc.Name));
-            // If it can't return default location
-            default:
-                return (defaultLocation, defaultTile);
-        }
     }
 
     private static void ResetNpc(Store store, NPC npc, SchedulePathDescription? previousSchedule = null)
@@ -284,8 +248,8 @@ public class ReturningCompanion
         
             Game1.warpCharacter(
                 npc, 
-                previousSchedule?.targetLocationName ?? _defaultLocation,
-                previousSchedule?.targetTile ?? _defaultTile
+                previousSchedule?.targetLocationName ?? npc.DefaultMap,
+                previousSchedule?.targetTile ?? new Point((int)npc.DefaultPosition.X / 64, (int)npc.DefaultPosition.Y / 64)
             );
         
             store.Companions.RemoveReturningCompanion(npc);
