@@ -3,7 +3,7 @@ using StardewModdingAPI;
 
 namespace CompanionAdventures.Framework;
 
-public class AppConfig
+public class ResourceConfig
 {
     public ModConfig? Config { get; init; }
     public IModHelper? Helper { get; init; }
@@ -15,9 +15,9 @@ public class AppConfig
 /// Holds references to application utilities. This is useful because they can be accessed from a static or instance
 /// context without having to pass them as parameters.
 /// </summary>
-public class App
+public class Resources
 {
-    private static App? _instance;
+    private static Resources? _instance;
     private ModConfig? _config = null;
     private IModHelper? _helper = null;
     private IManifest? _manifest = null;
@@ -46,11 +46,11 @@ public class App
         private set => this._monitor = value;
     }
     
-    private App() { }
+    private Resources() { }
 
-    public static App UseApp(AppConfig? config = null) {
+    public static Resources UseResources(ResourceConfig? config = null) {
         // Set _instance to a new instance of Utility if it is not already
-        _instance ??= new App();
+        _instance ??= new Resources();
 
         if (config?.Config != null)
         {

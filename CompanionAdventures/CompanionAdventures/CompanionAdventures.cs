@@ -1,7 +1,7 @@
 using CompanionAdventures.Framework;
 using CompanionAdventures.Framework.Models;
 using static CompanionAdventures.Framework.Companions;
-using static CompanionAdventures.Framework.App;
+using static CompanionAdventures.Framework.Resources;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -13,12 +13,6 @@ namespace CompanionAdventures
         // Holds the configuration for this mod
         public ModConfig Config = null!;
         
-        // Companions store, holds state for companions
-        public Companions Companions = null!;
-        
-        // Utilities store, holds utilities used by the mod
-        public App App = null!;
-        
         /// <summary>
         /// The mod entry point, called after the mod is first loaded.
         /// </summary>
@@ -27,17 +21,14 @@ namespace CompanionAdventures
             // Load mod config
             this.Config = helper.ReadConfig<ModConfig>();
 
-            // Create instance of the app store
-            this.App = UseApp(new AppConfig
+            // Initialize resources store
+            UseResources(new ResourceConfig
             {
                 Config = this.Config,
                 Helper = this.Helper,
                 Manifest = this.ModManifest,
                 Monitor = this.Monitor,
             });
-            
-            // Create instance of the companions store
-            this.Companions = UseCompanions();
             
             // Hook events
             RegisterEvents();
@@ -92,8 +83,31 @@ namespace CompanionAdventures
                 // Suppress default behavior 
                 this.Helper.Input.Suppress(e.Button);
                 
-                // Use the HandleInteraction function to handle interacting with this NPC
-                Interactions.HandleInteraction(farmer, npc);
+                Companions companions = UseCompanions();
+        
+                // Early Exit: If this npc is not a companion then return
+                if (!companions.TryGetCompanion(npc, out Companion? companion))
+                {
+                    return;
+                }
+        
+                // Early Exit: Is this companion a valid companion for this farmer (check their heart level)
+                if (!companion.IsCompanionValidForFarmer(farmer))
+                {
+                    return;
+                }
+
+                if (companion.IsAvailable)
+                {
+                    companion.AskToJoin(farmer);
+                } 
+                else if (companion.IsRecruited)
+                {
+                    if (companion.Leader == farmer)
+                    {
+                        companion.AskOptions();
+                    }
+                }
             }
         }
         

@@ -11,14 +11,38 @@ using StardewValley;
 public class Companions
 {
     private static Companions? _instance;
+    private Dictionary<string, Companion> _companions;
 
-    private Companions() { }
+    private Companions()
+    {
+        // TODO: Load hearts and companions from config files
+        this._companions = new Dictionary<string, Companion>
+        {
+            {"Abigail", new Companion()}
+        };
+    }
     
     public static Companions UseCompanions()
     {
         return _instance ??= new Companions();
     }
 
+    public void Add(Farmer farmer, NPC npc)
+    {
+        // Early Exit: If this npc is not a companion then return
+        if (!TryGetCompanion(npc, out Companion companion))
+        {
+            throw new InvalidCompanionException;
+        }
+        
+        Add(farmer, companion);
+    }
+
+    public void Add(Farmer farmer, Companion companion)
+    {
+        
+    }
+    
     public bool TryGetCompanion(NPC npc, out Companion companion)
     {
         companion = null;
