@@ -1,51 +1,48 @@
+using CompanionAdventures.Framework.Models;
 using StardewValley;
+using static CompanionAdventures.Framework.Companions;
 
 namespace CompanionAdventures.Framework;
 
-#region Store Setup
-public partial class Store
-{
-    public Interactions Interactions => DefineStore<Interactions>();
-}
-#endregion
-
-/// <summary>
-/// Holds global events that are not specific to a leader or companion
-///
-/// For example: handling controller input or loading assets
-/// </summary>
-public class Interactions: StoreBase
+public static class Interactions
 {
     /// <summary>
     /// Handles when a NPC is interacted with
     /// </summary>
     /// <param name="farmer">The farmer interacting with the NPC</param>
     /// <param name="npc">The NPC being interacted with</param>
-    public void HandleInteraction(Farmer farmer, NPC npc)
+    public static void HandleInteraction(Farmer farmer, NPC npc)
     {
-        // Early Exit: If this npc cannot be a companion then return
-        if (!store.Companions.IsNpcValidCompanion(npc))
+        Companions companions = UseCompanions();
+        
+        // Early Exit: If this npc is not a companion then return
+        if (!companions.TryGetCompanion(npc, out Companion? companion))
         {
             return;
         }
         
-        // Is the NPC being interacted with currently a companion?
-        if (store.Companions.IsNpcCompanionForFarmer(farmer, npc))
+        // Early Exit: Is this companion a valid companion for this farmer (check their heart level)
+        if (!companion.IsCompanionValidForFarmer(farmer))
         {
-            AskOptions(farmer, npc);
+            return;
         }
-        else
-        {
-            AskToJoin(farmer, npc);
-        }
+        
+        // TODO: Is this companion recruitable?
+            // AskToJoin(farmer, npc);
+            
+        // TODO: Is this companion following?
+        //  if so is this farmer the leader?
+            // AskOptions(farmer, npc);
     }
-
+    
+    // TODO: These need to not use Game1.currentLocation.createQuestionDialogue because that will ask all players in 
+    //  this location, which isn't what we want
     /// <summary>
     /// Ask an NPC if they want to be a companion
     /// </summary>
     /// <param name="farmer">The farmer interacting with the NPC</param>
     /// <param name="npc">The NPC being interacted with</param>
-    public void AskToJoin(Farmer farmer, NPC npc)
+    private static void AskToJoin(Farmer farmer, NPC npc)
     {
         // TODO: Translation
         string dialogText = $"Ask {npc.Name} to follow?";
@@ -65,12 +62,12 @@ public class Interactions: StoreBase
                     return;
                 }
                 
-                store.Companions.Add(farmer, npc);
+                // store.Companions.Add(farmer, npc);
             }, 
             npc);
     }
 
-    public void AskOptions(Farmer farmer, NPC npc)
+    private static void AskOptions(Farmer farmer, NPC npc)
     {
         string dialogText = $"Ask {npc.Name} to leave?";
         Response[] responses =
@@ -88,9 +85,8 @@ public class Interactions: StoreBase
                     return;
                 }
                 
-                store.Companions.Remove(farmer, npc);
+                // store.Companions.Remove(farmer, npc);
             }, 
             npc);
     }
-    
 }
