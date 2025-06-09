@@ -2,56 +2,17 @@ using CompanionAdventures.Framework.Models;
 
 namespace CompanionAdventures.Framework;
 
-
-/// <summary>
-/// Holds functions for creating and removing companions as well as some utility functions for determining if npcs are
-/// valid companions. Also handles creating and removing Leader and Companion classes automatically
-/// </summary>
 public class CompanionsOld: StoreBase
 {
-    /****
-     ** Config
-     ****/
-    private List<string> _validCompanions;
-    private Dictionary<string, int> _companionHeartsThreshold;
     
     /****
      ** State
      ****/
     // Holds Farmers that are currently Leaders (meaning they have companions with them)
     private Dictionary<Farmer, Leader> _leaders = new ();
-    // Holds NPCs that are no longer Companions but are not managed by the game yet because they are returning to their
-    // regular schedule location
-    private Dictionary<NPC, ReturningCompanion> _returningCompanions = new ();
-
-    public Companions()
-    {
-        // TODO: Load hearts and companions from config files
-        
-        this._validCompanions = new List<string> {"Abigail", "Penny"};
-        this._companionHeartsThreshold = new Dictionary<string, int> {{"Abigail", 0}, {"Penny", 0 }};
-    }
     
-    /// <summary>
-    /// Attempts to add the npc as a companion to the provided farmer
-    /// </summary>
     public void Add(Farmer farmer, NPC npc)
     {
-        // Early Exit: Check if NPC is already a companion
-        if (IsNpcCompanion(npc, out Farmer? currentFarmer))
-        {
-            // Companion existingCompanion = GetCompanion(npc)!;
-            store.Monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is already a companion for {currentFarmer!.Name}!", LogLevel.Trace);
-            return;
-        }
-        
-        // Early Exit: Check if NPC can be a companion for this farmer
-        if (!IsNpcValidCompanionForFarmer(npc, farmer))
-        {
-            store.Monitor.Log($"Could not add {npc.Name} as a companion to {farmer.Name}. {npc.Name} is not a valid companion for {farmer.Name}!", LogLevel.Trace);
-            return;
-        }
-
         if (_returningCompanions.TryGetValue(npc, out ReturningCompanion? returningCompanion))
         {
             RemoveReturningCompanion(npc);

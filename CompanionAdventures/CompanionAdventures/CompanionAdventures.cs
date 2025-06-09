@@ -22,13 +22,13 @@ namespace CompanionAdventures
             this.Config = helper.ReadConfig<ModConfig>();
 
             // Initialize resources store
-            UseResources(new ResourceConfig
-            {
-                Config = this.Config,
-                Helper = this.Helper,
-                Manifest = this.ModManifest,
-                Monitor = this.Monitor,
-            });
+            UseResources(ResourceConfig.Builder()
+                .Config(this.Config)
+                .Helper(this.Helper)
+                .Manifest(this.ModManifest)
+                .Monitor(this.Monitor)
+                .Build()
+            );
             
             // Hook events
             RegisterEvents();

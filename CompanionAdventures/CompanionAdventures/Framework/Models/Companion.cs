@@ -1,6 +1,5 @@
 using StardewModdingAPI;
 using StardewValley;
-using static CompanionAdventures.Framework.Resources;
 
 namespace CompanionAdventures.Framework.Models;
 
@@ -87,8 +86,9 @@ public class Companion
                 {
                     return;
                 }
+                Companions companions = UseCompanions();
                 
-                // store.Companions.Add(farmer, npc);
+                companions.Add(farmer, npc);
             }, 
             npc);
     }
@@ -117,7 +117,9 @@ public class Companion
                     return;
                 }
                 
-                // store.Companions.Remove(farmer, npc);
+                Companions companions = UseCompanions();
+                
+                companions.Remove(farmer, npc);
             }, 
             npc);
     }

@@ -1,3 +1,4 @@
+global using static CompanionAdventures.Framework.Companions;
 using CompanionAdventures.Framework.Models;
 
 namespace CompanionAdventures.Framework;
@@ -27,12 +28,18 @@ public class Companions
         return _instance ??= new Companions();
     }
 
+    /// <summary>
+    /// Adds the provided NPC as a companion to the provided Farmer
+    /// </summary>
+    /// <param name="farmer">Farmer instance to be leader</param>
+    /// <param name="npc">NPC to follow farmer (must be a valid companion or exception will be thrown)</param>
+    /// <exception cref="CompanionNotFoundException">Thrown if the provided NPC is not a valid companion</exception>
     public void Add(Farmer farmer, NPC npc)
     {
         // Early Exit: If this npc is not a companion then return
         if (!TryGetCompanion(npc, out Companion companion))
         {
-            throw new InvalidCompanionException;
+            throw new CompanionNotFoundException(npc.Name);
         }
         
         Add(farmer, companion);
@@ -40,7 +47,17 @@ public class Companions
 
     public void Add(Farmer farmer, Companion companion)
     {
+        // Early Exit: Check if NPC is already a companion
+        if (companion.IsRecruited)
+        {
+            throw new CompanionAlreadyRecruitedException(companion.npc.Name);
+        }
         
+        
+
+        // TODO:
+        //  check if farmer has max companions
+        companion.StartFollowing(farmer);
     }
     
     public bool TryGetCompanion(NPC npc, out Companion companion)

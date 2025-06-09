@@ -5,10 +5,58 @@ namespace CompanionAdventures.Framework;
 
 public class ResourceConfig
 {
-    public ModConfig? Config { get; init; }
-    public IModHelper? Helper { get; init; }
-    public IManifest? Manifest { get; init; }
-    public IMonitor? Monitor { get; init; }
+    public ModConfig? Config { get; private init; }
+    public IModHelper? Helper { get; private init; }
+    public IManifest? Manifest { get; private init; }
+    public IMonitor? Monitor { get; private init; }
+
+    public class ResourceConfigBuilder
+    {
+        private ModConfig? _config { get; set; }
+        private IModHelper? _helper { get; set; }
+        private IManifest? _manifest { get; set; }
+        private IMonitor? _monitor { get; set; }
+
+        public ResourceConfigBuilder Config(ModConfig config)
+        {
+            this._config = config;
+            return this;
+        }
+
+        public ResourceConfigBuilder Helper(IModHelper helper)
+        {
+            this._helper = helper;
+            return this;
+        }
+
+        public ResourceConfigBuilder Manifest(IManifest manifest)
+        {
+            this._manifest = manifest;
+            return this;
+        }
+
+        public ResourceConfigBuilder Monitor(IMonitor monitor)
+        {
+            this._monitor = monitor;
+            return this;
+        }
+        
+        public ResourceConfig Build()
+        {
+            return new ResourceConfig
+            {
+                Config = this._config,
+                Helper = this._helper,
+                Manifest = this._manifest,
+                Monitor = this._monitor,
+            };
+        }
+    }
+
+    public static ResourceConfigBuilder Builder()
+    {
+        return new ResourceConfigBuilder();
+    }
 }
 
 /// <summary>
