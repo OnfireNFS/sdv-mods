@@ -119,7 +119,7 @@ public class Companion
                 
                 Companions companions = UseCompanions();
                 
-                companions.Remove(farmer, npc);
+                // companions.Remove(farmer, npc);
             }, 
             npc);
     }

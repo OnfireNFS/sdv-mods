@@ -14,56 +14,19 @@ namespace CompanionAdventures.Framework.Models;
 /// <param name="npc"></param>
 public class Leader
 {
-    private readonly Store store;
-    
     public Farmer Farmer;
     public List<Companion> Companions = new();
     
     public readonly BehaviorSubject<Vector2> Tile;
     public readonly BehaviorSubject<GameLocation> Location;
     
-    public Leader(Store store, Farmer farmer)
+    public Leader(Farmer farmer)
     {
-        this.store = store;
         this.Farmer = farmer;
-        
-        store.Monitor.Log($"Creating Leader instance for {farmer.Name}");
         
         Tile = new BehaviorSubject<Vector2>(farmer.Tile);
         Location = new BehaviorSubject<GameLocation>(farmer.currentLocation);
-        
-        RegisterEvents();
     }
-
-    public void AddCompanion(NPC npc)
-    {
-        // Early Exit: If farmer has more than or equal to maximum number of companions
-        if (Companions.Count >= store.Config.MaxCompanions)
-        {
-            store.Monitor.Log($"Could not add {npc.Name} as a companion to {Farmer.Name}. {Farmer.Name} already has the maximum number of companions!", LogLevel.Trace);
-            return;
-        }
-        
-        Companion companion = new Companion(store, npc, this);
-        Companions.Add(companion);
-        
-        store.Monitor.Log($"Successfully added {companion.npc.Name} as a companion to {Farmer.Name}.", LogLevel.Trace);
-    }
-    
-    public void RemoveCompanion(NPC npc)
-    {
-        Companion? companion = Companions.Find(companion => companion.npc == npc);
-        
-        if (companion == null)
-        {
-            store.Monitor.Log($"Could not remove {npc.Name} as a companion. {npc.Name} is not a companion of {Farmer.Name}!", LogLevel.Trace);
-            return;
-        }
-        
-        Companions.Remove(companion);
-        companion.Remove();
-    }
-
     public bool IsCompanion(NPC npc)
     {
         return Companions.Any(companion => companion.npc == npc);
@@ -102,23 +65,6 @@ public class Leader
         
         Tile.OnNext(Farmer.Tile);
     }
-
-    /****
-     ** Events
-     ****/
-    private void RegisterEvents()
-    {
-        store.Monitor.Log($"Registering events for Leader {Farmer.Name}");
-        store.Helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
-        store.Helper.Events.Player.Warped += OnPlayerWarped;
-    }
-
-    private void UnregisterEvents()
-    {
-        store.Monitor.Log($"Unregistering events for Leader {Farmer.Name}");
-        store.Helper.Events.GameLoop.UpdateTicking -= OnUpdateTicking;
-        store.Helper.Events.Player.Warped -= OnPlayerWarped;
-    }
     
     private void OnPlayerWarped(object? sender, WarpedEventArgs e)
     {
@@ -133,17 +79,5 @@ public class Leader
     {
         // Every tick, check if our Farmers tile has changed
         UpdateTile();
-    }
-    
-    public void Remove()
-    {
-        store.Monitor.Log($"Removing Leader instance for {Farmer.Name}");
-        
-        foreach (Companion companion in Companions)
-        {
-            companion.Remove();
-        }
-        
-        UnregisterEvents();
     }
 }

@@ -36,13 +36,13 @@ public class Companions
     /// <exception cref="CompanionNotFoundException">Thrown if the provided NPC is not a valid companion</exception>
     public void Add(Farmer farmer, NPC npc)
     {
-        // Early Exit: If this npc is not a companion then return
-        if (!TryGetCompanion(npc, out Companion companion))
+        // Early Exit: If this npc is not a companion
+        if (!TryGetCompanion(npc, out Companion? companion))
         {
             throw new CompanionNotFoundException(npc.Name);
         }
         
-        Add(farmer, companion);
+        Add(farmer, companion!);
     }
 
     public void Add(Farmer farmer, Companion companion)
@@ -53,14 +53,41 @@ public class Companions
             throw new CompanionAlreadyRecruitedException(companion.npc.Name);
         }
         
-        
-
         // TODO:
         //  check if farmer has max companions
-        companion.StartFollowing(farmer);
+        // companion.StartFollowing(farmer);
+    }
+
+    public void Remove(Farmer farmer, NPC npc)
+    {
+        // Early Exit: If this npc is not a companion
+        if (!TryGetCompanion(npc, out Companion? companion))
+        {
+            throw new CompanionNotFoundException(npc.Name);
+        }
+        
+        Remove(farmer, companion!);
+    }
+
+    public void Remove(Farmer farmer, Companion companion)
+    {
+        // Early Exit: If this companion is not recruited
+        if (!companion.IsRecruited)
+        {
+            throw new CompanionNotRecruitedException(companion.npc.Name);
+        }
+
+        if (companion.Leader == farmer)
+        {
+            // companion.StopFollowing();
+        }
+        else
+        {
+            throw new CompanionNotFollowingFarmerException(companion.npc.Name, farmer.Name);
+        }
     }
     
-    public bool TryGetCompanion(NPC npc, out Companion companion)
+    public bool TryGetCompanion(NPC npc, out Companion? companion)
     {
         companion = null;
         

@@ -11,20 +11,16 @@ namespace CompanionAdventures.Framework.Models;
 /// </summary>
 public class CompanionOld
 {
-    private readonly Store store;
     public NPC npc;
     public Leader leader;
     
     private IDisposable leaderTile;
     private IDisposable leaderLocation;
 
-    public Companion(Store store, NPC npc, Leader leader)
+    public CompanionOld(NPC npc, Leader leader)
     {
-        this.store = store;
         this.npc = npc;
         this.leader = leader;
-        
-        store.Monitor.Log($"Creating Companion instance for {npc.Name}");
 
         this.leaderTile = leader.Tile.Subscribe(UpdateTile);
         this.leaderLocation = leader.Location.Subscribe(UpdateLocation);
@@ -50,8 +46,6 @@ public class CompanionOld
         if(npc.currentLocation.Equals(newLocation))
             return;
         
-        store.Monitor.Log($"Updating companion {npc.Name}'s location to {newLocation}");
-        
         Game1.warpCharacter(npc, newLocation, leader.Tile.Value);
     }
 
@@ -60,14 +54,14 @@ public class CompanionOld
      ****/
     private void RegisterEvents()
     {
-        store.Monitor.Log($"Registering events for Companion {npc.Name}");
-        store.Helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
+        // store.Monitor.Log($"Registering events for Companion {npc.Name}");
+        // store.Helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
     }
 
     private void UnregisterEvents()
     {
-        store.Monitor.Log($"Unregistering events for Companion {npc.Name}");
-        store.Helper.Events.GameLoop.UpdateTicking -= OnUpdateTicking;
+        // store.Monitor.Log($"Unregistering events for Companion {npc.Name}");
+        // store.Helper.Events.GameLoop.UpdateTicking -= OnUpdateTicking;
     }
     
     private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
@@ -77,8 +71,6 @@ public class CompanionOld
     
     public void Remove()
     {
-        store.Monitor.Log($"Removing Companion instance for {npc.Name}");
-        
         // Remove reactive listeners
         leaderTile.Dispose();
         leaderLocation.Dispose();

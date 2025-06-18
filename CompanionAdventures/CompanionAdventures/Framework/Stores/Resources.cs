@@ -1,3 +1,4 @@
+global using static CompanionAdventures.Framework.Resources;
 using CompanionAdventures.Framework.Models;
 using StardewModdingAPI;
 
