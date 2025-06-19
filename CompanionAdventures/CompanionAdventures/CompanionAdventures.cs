@@ -94,6 +94,7 @@ namespace CompanionAdventures
                 // Early Exit: Is this companion a valid companion for this farmer (check their heart level)
                 if (!companion!.IsCompanionValidForFarmer(farmer))
                 {
+                    resources.Monitor.Log($"{farmer.Name} has not met the requirements for {npc.Name} to be a companion");
                     return;
                 }
 
@@ -107,6 +108,10 @@ namespace CompanionAdventures
                     {
                         companion.AskOptions();
                     }
+                }
+                else
+                {
+                    resources.Monitor.Log($"{npc.Name} is unavailable to be a companion today");
                 }
             }
         }

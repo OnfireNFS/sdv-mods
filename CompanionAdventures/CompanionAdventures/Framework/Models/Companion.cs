@@ -62,18 +62,6 @@ public class Companion
     /// <param name="farmer">Farmer asking companion to follow them</param>
     public void AskToJoin(Farmer farmer)
     {
-        // Early Exit: If companion isn't available then return
-        if (!IsAvailable)
-        {
-            return;
-        }
-        
-        // Early Exit: Is this companion a valid companion for this farmer (check their heart level)
-        if (!IsCompanionValidForFarmer(farmer))
-        {
-            return;
-        }
-        
         // TODO: Translation
         string dialogText = $"Ask {npc.Name} to follow?";
         Response[] responses =
