@@ -1,86 +1,126 @@
-using Microsoft.Xna.Framework;
 using StardewModdingAPI;
-using StardewModdingAPI.Events;
 using StardewValley;
-using StardewValley.Pathfinding;
 
 namespace CompanionAdventures.Framework.Models;
 
 /// <summary>
-/// Class responsible for holding and managing the state of a single companion
+/// Different states a companion can be in
+/// Unavailable: Companion cannot be recruited
+/// Available: Companion is available to be recruited
+/// Recruited: Companion is currently recruited
+/// Returning: Companion is returning to previous location
 /// </summary>
+enum CompanionAvailability
+{
+    Unavailable,
+    Available,
+    Recruited
+}
+
 public class Companion
 {
-    private readonly Store store;
+    private readonly int _heartThreshold = 0;
+    private CompanionAvailability _availability = CompanionAvailability.Unavailable;
+    
     public NPC npc;
-    public Leader leader;
+    public Farmer? Leader = null;
+
+    public bool IsAvailable => this._availability == CompanionAvailability.Available;
+    public bool IsUnavailable => this._availability == CompanionAvailability.Unavailable;
+    public bool IsRecruited => this._availability == CompanionAvailability.Recruited;
+
+    public bool IsCompanionValidForFarmer(Farmer farmer)
+    {
+        Resources resources = UseResources();
+        resources.Monitor.Log($"Checking if {npc.Name} can be a valid companion for {farmer.Name}.");
+        
+        // Get the heart level of the farmer and this npc
+        var hearts = Util.GetHeartLevel(farmer, npc);
+
+        // Return true if number of hearts is equal to or above heart threshold
+        if (hearts >= _heartThreshold)
+        {
+            resources.Monitor.Log($"{npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
+            return true;
+        }
     
-    private IDisposable leaderTile;
-    private IDisposable leaderLocation;
-
-    public Companion(Store store, NPC npc, Leader leader)
-    {
-        this.store = store;
-        this.npc = npc;
-        this.leader = leader;
-        
-        store.Monitor.Log($"Creating Companion instance for {npc.Name}");
-
-        this.leaderTile = leader.Tile.Subscribe(UpdateTile);
-        this.leaderLocation = leader.Location.Subscribe(UpdateLocation);
-        
-        // Stop NPC Movement
-        npc.controller = null;
-        npc.temporaryController = null;
-        npc.isMovingOnPathFindPath.Value = false;
-        
-        // Clear NPCs schedule
-        npc.ClearSchedule();
+        resources.Monitor.Log($"{npc.Name} is not a valid companion for {farmer.Name}.", LogLevel.Trace);
+        return false;
     }
-
-    private void UpdateTile(Vector2 tile)
-    {
-        npc.position.X = (int)tile.X * 64;
-        npc.position.Y = (int)tile.Y * 64;
-    }
-
-    public void UpdateLocation(GameLocation newLocation)
-    {
-        // Don't warp this Companion if they are already on this map
-        if(npc.currentLocation.Equals(newLocation))
-            return;
-        
-        store.Monitor.Log($"Updating companion {npc.Name}'s location to {newLocation}");
-        
-        Game1.warpCharacter(npc, newLocation, leader.Tile.Value);
-    }
-
+    
     /****
-     ** Events
+     ** Dialogue
      ****/
-    private void RegisterEvents()
+    /// <summary>
+    /// Ask this companion to follow the provided farmer
+    /// </summary>
+    /// <param name="farmer">Farmer asking companion to follow them</param>
+    public void AskToJoin(Farmer farmer)
     {
-        store.Monitor.Log($"Registering events for Companion {npc.Name}");
-        store.Helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
+        // Early Exit: If companion isn't available then return
+        if (!IsAvailable)
+        {
+            return;
+        }
+        
+        // Early Exit: Is this companion a valid companion for this farmer (check their heart level)
+        if (!IsCompanionValidForFarmer(farmer))
+        {
+            return;
+        }
+        
+        // TODO: Translation
+        string dialogText = $"Ask {npc.Name} to follow?";
+        Response[] responses =
+        [
+            new Response(Constants.DialogApprove, "Yes"),
+            new Response(Constants.DialogReject, "No"),
+        ];
+
+        // This probably shows dialogue for all players in this location
+        Game1.currentLocation.createQuestionDialogue(dialogText, responses,
+            (Farmer _farmer, string response) =>
+            {
+                // Early Exit: If farmer decided not to ask NPC to become companion then do nothing
+                if (response == Constants.DialogReject)
+                {
+                    return;
+                }
+                Companions companions = UseCompanions();
+                
+                companions.Add(farmer, npc);
+            }, 
+            npc);
     }
 
-    private void UnregisterEvents()
+    public void AskOptions()
     {
-        store.Monitor.Log($"Unregistering events for Companion {npc.Name}");
-        store.Helper.Events.GameLoop.UpdateTicking -= OnUpdateTicking;
-    }
-    
-    private void OnUpdateTicking(object? sender, UpdateTickingEventArgs e)
-    {
-        // Calculate new position for this npc or something?
-    }
-    
-    public void Remove()
-    {
-        store.Monitor.Log($"Removing Companion instance for {npc.Name}");
+        // Early Exit: If companion isn't recruited then return
+        if (!IsRecruited)
+        {
+            return;
+        }
         
-        // Remove reactive listeners
-        leaderTile.Dispose();
-        leaderLocation.Dispose();
+        string dialogText = $"Ask {npc.Name} to leave?";
+        Response[] responses =
+        [
+            new Response(Constants.DialogApprove, "Yes"),
+            new Response(Constants.DialogReject, "No"),
+        ];
+        
+        Game1.currentLocation.createQuestionDialogue(dialogText, responses,
+            (Farmer _farmer, string response) =>
+            {
+                // Early Exit: If farmer decided not to ask NPC to leave then do nothing
+                if (response == Constants.DialogReject)
+                {
+                    return;
+                }
+                
+                Companions companions = UseCompanions();
+                
+                // companions.Remove(farmer, npc);
+            }, 
+            npc);
     }
 }
