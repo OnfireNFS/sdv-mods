@@ -19,7 +19,7 @@ public class Companions
         // TODO: Load hearts and companions from config files
         this._companions = new Dictionary<string, Companion>
         {
-            {"Abigail", new Companion()}
+            {"Abigail", new Companion(Game1.getCharacterFromName("Abigail")) },
         };
     }
     
@@ -89,8 +89,6 @@ public class Companions
     
     public bool TryGetCompanion(NPC npc, out Companion? companion)
     {
-        companion = null;
-        
-        return false;
+        return this._companions.TryGetValue(npc.Name, out companion);
     }
 }

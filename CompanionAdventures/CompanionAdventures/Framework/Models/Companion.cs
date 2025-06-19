@@ -29,6 +29,11 @@ public class Companion
     public bool IsUnavailable => this._availability == CompanionAvailability.Unavailable;
     public bool IsRecruited => this._availability == CompanionAvailability.Recruited;
 
+    public Companion(NPC npc)
+    {
+        this.npc = npc;
+    }
+    
     public bool IsCompanionValidForFarmer(Farmer farmer)
     {
         Resources resources = UseResources();
@@ -40,11 +45,11 @@ public class Companion
         // Return true if number of hearts is equal to or above heart threshold
         if (hearts >= _heartThreshold)
         {
-            resources.Monitor.Log($"{npc.Name} can be a valid companion for {farmer.Name}.", LogLevel.Trace);
+            resources.Monitor.Log($"{npc.Name} can be a valid companion for {farmer.Name}.");
             return true;
         }
     
-        resources.Monitor.Log($"{npc.Name} is not a valid companion for {farmer.Name}.", LogLevel.Trace);
+        resources.Monitor.Log($"{npc.Name} is not a valid companion for {farmer.Name}.");
         return false;
     }
     

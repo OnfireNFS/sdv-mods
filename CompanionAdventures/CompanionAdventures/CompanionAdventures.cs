@@ -82,10 +82,12 @@ namespace CompanionAdventures
                 this.Helper.Input.Suppress(e.Button);
                 
                 Companions companions = UseCompanions();
+                Resources resources = UseResources();
         
                 // Early Exit: If this npc is not a companion then return
                 if (!companions.TryGetCompanion(npc, out Companion? companion))
                 {
+                    resources.Monitor.Log($"{npc.Name} is not a companion");
                     return;
                 }
         
