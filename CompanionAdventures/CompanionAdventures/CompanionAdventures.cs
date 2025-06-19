@@ -92,7 +92,7 @@ namespace CompanionAdventures
                 }
         
                 // Early Exit: Is this companion a valid companion for this farmer (check their heart level)
-                if (!companion.IsCompanionValidForFarmer(farmer))
+                if (!companion!.IsCompanionValidForFarmer(farmer))
                 {
                     return;
                 }
