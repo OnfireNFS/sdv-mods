@@ -1,7 +1,5 @@
 using CompanionAdventures.Framework;
 using CompanionAdventures.Framework.Models;
-using static CompanionAdventures.Framework.Companions;
-using static CompanionAdventures.Framework.Resources;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
