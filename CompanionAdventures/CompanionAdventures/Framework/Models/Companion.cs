@@ -102,7 +102,7 @@ public class Companion
         ];
         
         Game1.currentLocation.createQuestionDialogue(dialogText, responses,
-            (Farmer _farmer, string response) =>
+            (Farmer farmer, string response) =>
             {
                 // Early Exit: If farmer decided not to ask NPC to leave then do nothing
                 if (response == Constants.DialogReject)
@@ -112,8 +112,8 @@ public class Companion
                 
                 Companions companions = UseCompanions();
                 
-                // companions.Remove(farmer, npc);
+                companions.Remove(farmer, npc);
             }, 
-            npc);
+        npc);
     }
 }

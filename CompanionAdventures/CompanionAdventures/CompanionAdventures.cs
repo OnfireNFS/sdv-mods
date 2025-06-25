@@ -3,6 +3,7 @@ using CompanionAdventures.Framework.Models;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
+using Constants = CompanionAdventures.Framework.Constants;
 
 namespace CompanionAdventures
 {
@@ -37,8 +38,9 @@ namespace CompanionAdventures
          ****/
         private void RegisterEvents()
         {
-            this.Helper.Events.GameLoop.GameLaunched += OnGameLaunched;
             this.Helper.Events.Input.ButtonPressed += OnButtonPressed;
+            this.Helper.Events.GameLoop.DayStarted += OnDayStarted;
+            this.Helper.Events.GameLoop.GameLaunched += OnGameLaunched;
         }
         
         /// <summary>
@@ -49,7 +51,7 @@ namespace CompanionAdventures
         /// </summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event data.</param>
-        public void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
+        private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
         {
             // Ignore if player isn't in the world or if they are in a cutscene
             if (!Context.IsPlayerFree)
@@ -116,9 +118,43 @@ namespace CompanionAdventures
             }
         }
         
+        private void OnDayStarted(object? sender, DayStartedEventArgs e)
+        {
+            Companions companions = UseCompanions();
+            // On day started
+            // Check each companion if they can be a companion today or not
+        }
+        
         private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
         {
             var api = this.Helper.ModRegistry.GetApi<IContentPack>("Pathoschild.ContentPatcher");
+        }
+
+        private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
+        {
+            Resources resources = UseResources();
+            
+            // Early Exit: If we are the host or playing singleplayer enable the mod
+            if (Context.IsMainPlayer)
+            {
+                resources.Enabled = true;
+                return;
+            }
+            
+            // If we are not the host and playing multiplayer check if the host has the same mod and version
+            ISemanticVersion? hostVersion = this.Helper.Multiplayer.GetConnectedPlayer(Game1.MasterPlayer.UniqueMultiplayerID)?.GetMod(this.ModManifest.UniqueID)?.Version;
+            if (hostVersion == null)
+            {
+                resources.Enabled = false;
+                this.Monitor.Log("Companion Framework disabled because the host player doesn't have it installed.", LogLevel.Warn);
+            }
+            else if (hostVersion.IsOlderThan(Constants.MinHostVersion))
+            {
+                resources.Enabled = false;
+                this.Monitor.Log($"Companion Framework disabled because the host player has {this.ModManifest.Name} {hostVersion}, but the minimum compatible version is {Constants.MinHostVersion}.", LogLevel.Warn);
+            }
+            else
+                resources.Enabled = true;
         }
     }
 }

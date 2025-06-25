@@ -72,6 +72,8 @@ public class Resources
     private IManifest? _manifest = null;
     private IMonitor? _monitor = null;
 
+    public bool Enabled { get; set; } = false;
+
     public ModConfig Config
     {
         get => this._config ?? throw new NullReferenceException("App.Config");
