@@ -7,7 +7,7 @@
 // using StardewValley.Locations;
 // using StardewValley.Pathfinding;
 //
-// namespace CompanionAdventures.Framework.Models;
+// namespace CompanionFramework.Framework.Models;
 //
 // /// <summary>
 // /// Class responsible for holding and managing the state of a companion that is returning from an adventure

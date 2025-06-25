@@ -1,7 +1,7 @@
 using StardewModdingAPI;
 using StardewValley;
 
-namespace CompanionAdventures.Framework.Models;
+namespace CompanionFramework.Framework.Models;
 
 /// <summary>
 /// Different states a companion can be in

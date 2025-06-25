@@ -1,13 +1,13 @@
-using CompanionAdventures.Framework;
-using CompanionAdventures.Framework.Models;
+using CompanionFramework.Framework;
+using CompanionFramework.Framework.Models;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
-using Constants = CompanionAdventures.Framework.Constants;
+using Constants = CompanionFramework.Framework.Constants;
 
-namespace CompanionAdventures
+namespace CompanionFramework
 {
-    public class CompanionAdventures : Mod
+    public class CompanionFramework : Mod
     {
         // Holds the configuration for this mod
         public ModConfig Config = null!;
@@ -44,10 +44,10 @@ namespace CompanionAdventures
         }
         
         /// <summary>
-        /// Handles "OnButtonPressed" events for the CompanionAdventures mod.
+        /// Handles "OnButtonPressed" events for the CompanionFramework mod.
         ///
         /// More specifically will check if the button pressed was the action button, if the farmer is trying to
-        /// interact with a NPC and if the NPC has interactions relating to CompanionAdventures.
+        /// interact with a NPC and if the NPC has interactions relating to CompanionFramework.
         /// </summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event data.</param>

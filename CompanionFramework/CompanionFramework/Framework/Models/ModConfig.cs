@@ -1,4 +1,4 @@
-namespace CompanionAdventures.Framework.Models;
+namespace CompanionFramework.Framework.Models;
 
 public class ModConfig
 {

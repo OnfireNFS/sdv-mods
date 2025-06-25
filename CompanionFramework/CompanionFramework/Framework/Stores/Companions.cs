@@ -1,7 +1,7 @@
-global using static CompanionAdventures.Framework.Companions;
-using CompanionAdventures.Framework.Models;
+global using static CompanionFramework.Framework.Companions;
+using CompanionFramework.Framework.Models;
 
-namespace CompanionAdventures.Framework;
+namespace CompanionFramework.Framework;
 
 using StardewValley;
 

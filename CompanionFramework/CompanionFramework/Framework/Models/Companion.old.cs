@@ -4,7 +4,7 @@ using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.Pathfinding;
 
-namespace CompanionAdventures.Framework.Models;
+namespace CompanionFramework.Framework.Models;
 
 /// <summary>
 /// Class responsible for holding and managing the state of a single companion
