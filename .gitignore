@@ -1,4 +1,5 @@
 **/.idea/*
-**/CompanionAdventures/bin/*
-**/CompanionAdventures/obj/*
-**/CompanionAdventuresNative/target/*
+**/CompanionFramework/bin/*
+**/CompanionFramework/obj/*
+**/CompanionFrameworkNative/target/*
+CompanionFramework/CompanionFramework.sln.DotSettings.user

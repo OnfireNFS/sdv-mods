@@ -1,10 +1,10 @@
 {
-  "Name": "Companion Adventures",
+  "Name": "Companion Framework",
   "Author": "OnfireNFS",
   "Version": "1.0.0",
   "Description": "Ask villagers to be your companion and go on adventures with you!",
-  "UniqueID": "OnfireNFS.CompanionAdventures",
-  "EntryDll": "CompanionAdventures.dll",
+  "UniqueID": "OnfireNFS.CompanionFramework",
+  "EntryDll": "CompanionFramework.dll",
   "MinimumApiVersion": "4.0.0",
   "UpdateKeys": [],
   "Dependencies": [

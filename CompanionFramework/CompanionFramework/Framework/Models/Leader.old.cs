@@ -4,7 +4,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 
-namespace CompanionAdventures.Framework.Models;
+namespace CompanionFramework.Framework.Models;
 
 /// <summary>
 /// Class responsible for holding and managing the state of a single farmer leader

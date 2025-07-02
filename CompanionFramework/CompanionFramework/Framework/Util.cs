@@ -2,10 +2,10 @@ using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
 
-namespace CompanionAdventures.Framework;
+namespace CompanionFramework.Framework;
 
 /// <summary>
-/// Static class that contains utility functions used by CompanionAdventures
+/// Static class that contains utility functions used by CompanionFramework
 /// </summary>
 public static class Util
 {

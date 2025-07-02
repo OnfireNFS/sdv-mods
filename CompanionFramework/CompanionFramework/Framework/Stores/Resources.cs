@@ -1,8 +1,8 @@
-global using static CompanionAdventures.Framework.Resources;
-using CompanionAdventures.Framework.Models;
+global using static CompanionFramework.Framework.Resources;
+using CompanionFramework.Framework.Models;
 using StardewModdingAPI;
 
-namespace CompanionAdventures.Framework;
+namespace CompanionFramework.Framework;
 
 public class ResourceConfig
 {
