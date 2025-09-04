@@ -116,4 +116,15 @@ public class Companion
             }, 
         npc);
     }
+
+    /****
+     ** Events
+     ****/
+    public void OnDayStarted()
+    {
+        Resources resources = UseResources();
+        resources.Monitor.Log($"{npc.Name} is a valid companion today");
+        
+        this._availability = CompanionAvailability.Available;
+    }
 }

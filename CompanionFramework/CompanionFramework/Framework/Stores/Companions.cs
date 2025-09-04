@@ -91,4 +91,15 @@ public class Companions
     {
         return this._companions.TryGetValue(npc.Name, out companion);
     }
+    
+    /// <summary>
+    /// Initialize companions for a new day
+    /// </summary>
+    public void OnDayStarted()
+    {
+        foreach (var (_, companion) in _companions)
+        {
+            companion.OnDayStarted();
+        }
+    }
 }

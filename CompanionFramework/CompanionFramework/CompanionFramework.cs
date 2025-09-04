@@ -40,7 +40,7 @@ namespace CompanionFramework
         {
             this.Helper.Events.Input.ButtonPressed += OnButtonPressed;
             this.Helper.Events.GameLoop.DayStarted += OnDayStarted;
-            this.Helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+            this.Helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
         }
         
         /// <summary>
@@ -56,6 +56,13 @@ namespace CompanionFramework
             // Ignore if player isn't in the world or if they are in a cutscene
             if (!Context.IsPlayerFree)
                 return;
+
+            Resources resources = UseResources();
+            // Early Exit: If mod is not enabled return
+            if (!resources.Enabled)
+            {
+                return;
+            }
 
             // Check if the button pressed is the interact button
             if (e.Button.IsActionButton())
@@ -84,7 +91,6 @@ namespace CompanionFramework
                 this.Helper.Input.Suppress(e.Button);
                 
                 Companions companions = UseCompanions();
-                Resources resources = UseResources();
         
                 // Early Exit: If this npc is not a companion then return
                 if (!companions.TryGetCompanion(npc, out Companion? companion))
@@ -117,19 +123,23 @@ namespace CompanionFramework
                 }
             }
         }
-        
+
         private void OnDayStarted(object? sender, DayStartedEventArgs e)
         {
+            Resources resources = UseResources();
+            
+            // Early Exit: If mod is not enabled return
+            if (!resources.Enabled)
+            {
+                return;
+            }
+            
+            resources.Monitor.Log($"Preparing companions for new day!");
+            
             Companions companions = UseCompanions();
-            // On day started
-            // Check each companion if they can be a companion today or not
+            companions.OnDayStarted();
         }
         
-        private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
-        {
-            var api = this.Helper.ModRegistry.GetApi<IContentPack>("Pathoschild.ContentPatcher");
-        }
-
         private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
         {
             Resources resources = UseResources();
@@ -138,6 +148,7 @@ namespace CompanionFramework
             if (Context.IsMainPlayer)
             {
                 resources.Enabled = true;
+                resources.Monitor.Log($"Companion Framework enabled!");
                 return;
             }
             
@@ -146,15 +157,18 @@ namespace CompanionFramework
             if (hostVersion == null)
             {
                 resources.Enabled = false;
-                this.Monitor.Log("Companion Framework disabled because the host player doesn't have it installed.", LogLevel.Warn);
+                resources.Monitor.Log("Companion Framework disabled because the host player doesn't have it installed.", LogLevel.Warn);
             }
             else if (hostVersion.IsOlderThan(Constants.MinHostVersion))
             {
                 resources.Enabled = false;
-                this.Monitor.Log($"Companion Framework disabled because the host player has {this.ModManifest.Name} {hostVersion}, but the minimum compatible version is {Constants.MinHostVersion}.", LogLevel.Warn);
+                resources.Monitor.Log($"Companion Framework disabled because the host player has {this.ModManifest.Name} {hostVersion}, but the minimum compatible version is {Constants.MinHostVersion}.", LogLevel.Warn);
             }
             else
+            {
                 resources.Enabled = true;
+                resources.Monitor.Log($"Companion Framework enabled!");
+            }
         }
     }
 }
