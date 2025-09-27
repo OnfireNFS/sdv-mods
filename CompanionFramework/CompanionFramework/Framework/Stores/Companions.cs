@@ -48,7 +48,7 @@ public class Companions
     public void Add(Farmer farmer, Companion companion)
     {
         // Early Exit: Check if NPC is already a companion
-        if (companion.IsRecruited)
+        if (companion.Availability == CompanionAvailability.Recruited)
         {
             throw new CompanionAlreadyRecruitedException(companion.npc.Name);
         }
@@ -72,7 +72,7 @@ public class Companions
     public void Remove(Farmer farmer, Companion companion)
     {
         // Early Exit: If this companion is not recruited
-        if (!companion.IsRecruited)
+        if (companion.Availability != CompanionAvailability.Recruited)
         {
             throw new CompanionNotRecruitedException(companion.npc.Name);
         }

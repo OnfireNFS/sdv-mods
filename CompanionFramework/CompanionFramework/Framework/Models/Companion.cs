@@ -10,7 +10,7 @@ namespace CompanionFramework.Framework.Models;
 /// Recruited: Companion is currently recruited
 /// Returning: Companion is returning to previous location
 /// </summary>
-enum CompanionAvailability
+public enum CompanionAvailability
 {
     Unavailable,
     Available,
@@ -20,15 +20,11 @@ enum CompanionAvailability
 public class Companion
 {
     private readonly int _heartThreshold = 0;
-    private CompanionAvailability _availability = CompanionAvailability.Unavailable;
     
+    public CompanionAvailability Availability = CompanionAvailability.Unavailable;
     public NPC npc;
     public Farmer? Leader = null;
-
-    public bool IsAvailable => this._availability == CompanionAvailability.Available;
-    public bool IsUnavailable => this._availability == CompanionAvailability.Unavailable;
-    public bool IsRecruited => this._availability == CompanionAvailability.Recruited;
-
+    
     public Companion(NPC npc)
     {
         this.npc = npc;
@@ -89,7 +85,7 @@ public class Companion
     public void AskOptions()
     {
         // Early Exit: If companion isn't recruited then return
-        if (!IsRecruited)
+        if (this.Availability != CompanionAvailability.Recruited)
         {
             return;
         }
@@ -125,6 +121,6 @@ public class Companion
         Resources resources = UseResources();
         resources.Monitor.Log($"{npc.Name} is a valid companion today");
         
-        this._availability = CompanionAvailability.Available;
+        this.Availability = CompanionAvailability.Available;
     }
 }

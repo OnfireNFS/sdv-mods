@@ -7,3 +7,4 @@ public class CompanionNotFoundException(string name) : CompanionException($"Coul
 public class CompanionAlreadyRecruitedException(string name) : CompanionException($"Could not recruit companion \"{name}\". \"{name}\" is already recruited!");
 public class CompanionNotRecruitedException(string name) : CompanionException($"Companion \"{name}\" is not recruited!");
 public class CompanionNotFollowingFarmerException(string name, string farmer) : CompanionException($"Companion \"{name}\" is not following farmer \"{farmer}\"!"); 
+public class CompanionAvailabilityUnknownException(string msg) : CompanionException(msg); 

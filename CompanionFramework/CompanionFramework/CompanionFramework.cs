@@ -106,20 +106,19 @@ namespace CompanionFramework
                     return;
                 }
 
-                if (companion.IsAvailable)
+                switch (companion.Availability)
                 {
-                    companion.AskToJoin(farmer);
-                } 
-                else if (companion.IsRecruited)
-                {
-                    if (companion.Leader == farmer)
-                    {
+                    case CompanionAvailability.Available:
+                        companion.AskToJoin(farmer);
+                        break;
+                    case CompanionAvailability.Recruited:
                         companion.AskOptions();
-                    }
-                }
-                else
-                {
-                    resources.Monitor.Log($"{npc.Name} is unavailable to be a companion today");
+                        break;
+                    case CompanionAvailability.Unavailable:
+                        resources.Monitor.Log($"{npc.Name} is unavailable to be a companion today");
+                        break;
+                    default:
+                        throw new CompanionAvailabilityUnknownException("Unknown companion availability: " + companion.Availability);
                 }
             }
         }
