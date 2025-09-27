@@ -106,7 +106,7 @@ namespace CompanionFramework
                     return;
                 }
 
-                switch (companion.Availability)
+                switch (companion.Availability.Value)
                 {
                     case CompanionAvailability.Available:
                         companion.AskToJoin(farmer);

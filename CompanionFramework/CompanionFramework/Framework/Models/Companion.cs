@@ -21,10 +21,9 @@ public class Companion
 {
     private readonly int _heartThreshold = 0;
     
-    public CompanionAvailability Availability = CompanionAvailability.Unavailable;
+    public Reactive.Ref<CompanionAvailability> Availability = new(CompanionAvailability.Unavailable);
     public NPC npc;
     public Farmer? Leader = null;
-    
     public Companion(NPC npc)
     {
         this.npc = npc;
@@ -85,7 +84,7 @@ public class Companion
     public void AskOptions()
     {
         // Early Exit: If companion isn't recruited then return
-        if (this.Availability != CompanionAvailability.Recruited)
+        if (this.Availability.Value != CompanionAvailability.Recruited)
         {
             return;
         }
@@ -121,6 +120,6 @@ public class Companion
         Resources resources = UseResources();
         resources.Monitor.Log($"{npc.Name} is a valid companion today");
         
-        this.Availability = CompanionAvailability.Available;
+        this.Availability.Value = CompanionAvailability.Available;
     }
 }
