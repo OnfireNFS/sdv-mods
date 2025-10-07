@@ -21,7 +21,7 @@ public class Companion
 {
     private readonly int _heartThreshold = 0;
     
-    public Reactive.Ref<CompanionAvailability> Availability = new(CompanionAvailability.Unavailable);
+    public Ref<CompanionAvailability> Availability = new(CompanionAvailability.Unavailable);
     public NPC npc;
     public Farmer? Leader = null;
     public Companion(NPC npc)
@@ -32,6 +32,7 @@ public class Companion
     public bool IsCompanionValidForFarmer(Farmer farmer)
     {
         Resources resources = UseResources();
+        
         resources.Monitor.Log($"Checking if {npc.Name} can be a valid companion for {farmer.Name}.");
         
         // Get the heart level of the farmer and this npc

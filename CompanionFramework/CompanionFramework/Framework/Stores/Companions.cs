@@ -52,6 +52,8 @@ public class Companions
         {
             throw new CompanionAlreadyRecruitedException(companion.npc.Name);
         }
+
+        Leaders leaders = UseLeaders();
         
         // TODO:
         //  check if farmer has max companions

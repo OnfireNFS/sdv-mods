@@ -1,9 +1,10 @@
+global using static CompanionFramework.Framework.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
 namespace CompanionFramework.Framework;
 
-public class Reactive
+public static class Reactive
 {
     public class Ref<T>(T initialValue)
     {

@@ -40,6 +40,7 @@ namespace CompanionFramework
         {
             this.Helper.Events.Input.ButtonPressed += OnButtonPressed;
             this.Helper.Events.GameLoop.DayStarted += OnDayStarted;
+            this.Helper.Events.GameLoop.DayEnding += OnDayEnding;
             this.Helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
         }
         
@@ -137,6 +138,11 @@ namespace CompanionFramework
             
             Companions companions = UseCompanions();
             companions.OnDayStarted();
+        }
+
+        private void OnDayEnding(object? sender, DayEndingEventArgs e)
+        {
+            
         }
         
         private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
