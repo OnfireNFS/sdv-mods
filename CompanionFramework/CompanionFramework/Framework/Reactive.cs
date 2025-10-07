@@ -5,7 +5,7 @@ using System.Reactive.Subjects;
 namespace CompanionFramework.Framework;
 
 public static class Reactive
-{
+{ 
     public class Ref<T>(T initialValue)
     {
         private readonly BehaviorSubject<T> _subject = new(initialValue);

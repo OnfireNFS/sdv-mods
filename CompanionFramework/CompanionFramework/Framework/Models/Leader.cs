@@ -1,31 +1,27 @@
-using System.Reactive.Subjects;
 using Microsoft.Xna.Framework;
-using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 
 namespace CompanionFramework.Framework.Models;
 
-/// <summary>
-/// Class responsible for holding and managing the state of a single farmer leader
-///
-/// Uses reactive to signal subscribes of events/updates
-/// </summary>
-/// <param name="npc"></param>
 public class Leader
 {
     public Farmer Farmer;
     public List<Companion> Companions = new();
     
-    public readonly BehaviorSubject<Vector2> Tile;
-    public readonly BehaviorSubject<GameLocation> Location;
+    public readonly Ref<Vector2> Tile;
+    public readonly Ref<GameLocation> Location;
     
     public Leader(Farmer farmer)
     {
         this.Farmer = farmer;
+
+        Resources resources = UseResources();
+        resources.Helper.Events.GameLoop.UpdateTicking += OnUpdateTicking;
+        resources.Helper.Events.Player.Warped += OnPlayerWarped;
         
-        Tile = new BehaviorSubject<Vector2>(farmer.Tile);
-        Location = new BehaviorSubject<GameLocation>(farmer.currentLocation);
+        Tile = new Ref<Vector2>(farmer.Tile);
+        Location = new Ref<GameLocation>(farmer.currentLocation);
     }
     public bool IsCompanion(NPC npc)
     {
@@ -45,8 +41,8 @@ public class Leader
     {
         if(Location.Value.Equals(Farmer.currentLocation))
             return;
-        
-        Location.OnNext(Farmer.currentLocation);
+
+        Location.Value = Farmer.currentLocation;
         UpdateTile();
     }
     
@@ -62,8 +58,8 @@ public class Leader
         // Early exit: If the stored Tile matches current Farmer Tile do nothing
         if (Tile.Value.Equals(Farmer.Tile))
             return;
-        
-        Tile.OnNext(Farmer.Tile);
+
+        Tile.Value = Farmer.Tile;
     }
     
     private void OnPlayerWarped(object? sender, WarpedEventArgs e)

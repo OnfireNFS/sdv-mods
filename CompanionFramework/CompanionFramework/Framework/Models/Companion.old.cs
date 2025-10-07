@@ -22,8 +22,8 @@ public class CompanionOld
         this.npc = npc;
         this.leader = leader;
 
-        this.leaderTile = leader.Tile.Subscribe(UpdateTile);
-        this.leaderLocation = leader.Location.Subscribe(UpdateLocation);
+        // this.leaderTile = leader.Tile.Subscribe(UpdateTile);
+        // this.leaderLocation = leader.Location.Subscribe(UpdateLocation);
         
         // Stop NPC Movement
         npc.controller = null;

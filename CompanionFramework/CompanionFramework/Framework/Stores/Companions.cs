@@ -54,7 +54,10 @@ public class Companions
         }
 
         Leaders leaders = UseLeaders();
-        
+
+        Leader leader = new Leader(farmer);
+        companion.StartFollowing(leader);
+
         // TODO:
         //  check if farmer has max companions
         // companion.StartFollowing(farmer);
@@ -79,7 +82,7 @@ public class Companions
             throw new CompanionNotRecruitedException(companion.npc.Name);
         }
 
-        if (companion.Leader == farmer)
+        if (companion.Leader.Farmer == farmer)
         {
             // companion.StopFollowing();
         }

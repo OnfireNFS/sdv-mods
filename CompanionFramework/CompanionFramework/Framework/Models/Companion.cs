@@ -1,4 +1,4 @@
-using StardewModdingAPI;
+using Microsoft.Xna.Framework;
 using StardewValley;
 
 namespace CompanionFramework.Framework.Models;
@@ -23,7 +23,7 @@ public class Companion
     
     public Ref<CompanionAvailability> Availability = new(CompanionAvailability.Unavailable);
     public NPC npc;
-    public Farmer? Leader = null;
+    public Leader? Leader = null;
     public Companion(NPC npc)
     {
         this.npc = npc;
@@ -113,6 +113,28 @@ public class Companion
         npc);
     }
 
+    public void StartFollowing(Leader leader)
+    {
+        Leader = leader;
+        var stopLocation = Watch(leader.Location, UpdateLocation);
+        var stopTitle = Watch(leader.Tile, UpdateTile);
+    }
+    
+    private void UpdateTile(Vector2 tile)
+    {
+        npc.position.X = (int)tile.X * 64;
+        npc.position.Y = (int)tile.Y * 64;
+    }
+    
+    public void UpdateLocation(GameLocation newLocation)
+    {
+        // Don't warp this Companion if they are already on this map
+        if(npc.currentLocation.Equals(newLocation))
+            return;
+        
+        Game1.warpCharacter(npc, newLocation, Leader.Tile.Value);
+    }
+    
     /****
      ** Events
      ****/
