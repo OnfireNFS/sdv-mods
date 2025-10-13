@@ -76,4 +76,10 @@ public class Leader
         // Every tick, check if our Farmers tile has changed
         UpdateTile();
     }
+
+    public void AddCompanion(Companion companion)
+    {
+        Companions.Add(companion);
+        companion.StartFollowing(this);
+    }
 }

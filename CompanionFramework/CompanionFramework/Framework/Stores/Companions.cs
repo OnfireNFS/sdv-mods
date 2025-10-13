@@ -12,12 +12,13 @@ using StardewValley;
 public class Companions
 {
     private static Companions? _instance;
-    private Dictionary<string, Companion> _companions;
+    private Dictionary<string, Companion> _availableCompanions;
+    private Dictionary<Farmer, Leader> _leaders = new();
 
     private Companions()
     {
         // TODO: Load hearts and companions from config files
-        this._companions = new Dictionary<string, Companion>
+        this._availableCompanions = new Dictionary<string, Companion>
         {
             {"Abigail", new Companion(Game1.getCharacterFromName("Abigail")) },
         };
@@ -47,20 +48,36 @@ public class Companions
 
     public void Add(Farmer farmer, Companion companion)
     {
+        Resources resources = UseResources();
+
+        // Early Exit: Cannot add a companion if the max companions is 0 or less
+        if (resources.Config.MaxCompanions < 1)
+        {
+            resources.Monitor.Log($"Cannot add {companion.npc.Name} as a companion, the configured maximum number of companions for a farmer is less than 1");
+            return;
+        }
+        
         // Early Exit: Check if NPC is already a companion
         if (companion.Availability.Value == CompanionAvailability.Recruited)
         {
             throw new CompanionAlreadyRecruitedException(companion.npc.Name);
         }
 
-        Leaders leaders = UseLeaders();
+        if (!_leaders.TryGetValue(farmer, out Leader? leader))
+        {
+            leader = new Leader(farmer);
+            _leaders.Add(farmer, leader);
+        }
 
-        Leader leader = new Leader(farmer);
-        companion.StartFollowing(leader);
+        // Early Exit: Cannot add a companion if the farmer already has the maximum number of companions
+        if (leader.Companions.Count >= resources.Config.MaxCompanions)
+        {
+            resources.Monitor.Log($"Cannot add {companion.npc.Name} as a companion, {farmer.Name} already has the maximum number of companions");
+            return;
+        }
 
-        // TODO:
-        //  check if farmer has max companions
-        // companion.StartFollowing(farmer);
+        leader.AddCompanion(companion);
+        resources.Monitor.Log($"{companion.npc.Name} is now a companion for {farmer.Name}");
     }
 
     public void Remove(Farmer farmer, NPC npc)
@@ -94,7 +111,7 @@ public class Companions
     
     public bool TryGetCompanion(NPC npc, out Companion? companion)
     {
-        return this._companions.TryGetValue(npc.Name, out companion);
+        return this._availableCompanions.TryGetValue(npc.Name, out companion);
     }
     
     /// <summary>
@@ -102,7 +119,7 @@ public class Companions
     /// </summary>
     public void OnDayStarted()
     {
-        foreach (var (_, companion) in _companions)
+        foreach (var (_, companion) in _availableCompanions)
         {
             companion.OnDayStarted();
         }

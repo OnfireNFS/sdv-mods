@@ -116,17 +116,26 @@ public class Companion
     public void StartFollowing(Leader leader)
     {
         Leader = leader;
+        Availability.Value = CompanionAvailability.Recruited;
+        
+        // TODO: Set NPC controller to be followController
+        
         var stopLocation = Watch(leader.Location, UpdateLocation);
-        var stopTitle = Watch(leader.Tile, UpdateTile);
-    }
+        var stopTile = Watch(leader.Tile, tile =>
+        {
+            npc.position.X = (int)tile.X * 64;
+            npc.position.Y = (int)tile.Y * 64;
+        });
+}
     
+    // TODO: Replace this with a Controller that targets this location
     private void UpdateTile(Vector2 tile)
     {
         npc.position.X = (int)tile.X * 64;
         npc.position.Y = (int)tile.Y * 64;
     }
     
-    public void UpdateLocation(GameLocation newLocation)
+    private void UpdateLocation(GameLocation newLocation)
     {
         // Don't warp this Companion if they are already on this map
         if(npc.currentLocation.Equals(newLocation))

@@ -22,6 +22,11 @@ public class Leaders
         return _instance ??= new Leaders();
     }
 
+    public void GetLeader(Farmer farmer)
+    {
+        
+    }
+
     public void Add(Farmer farmer)
     {
         
